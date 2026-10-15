@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QXY Web · 管理台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">QXY WEB / LOCAL ADMIN</span>
+          <h1>内容管理台</h1>
+          <p>在浏览器里编辑草稿，保存到本机后导出 Markdown，再运行构建脚本发布到 GitHub Pages。</p>
+        </div>
+        <div class="admin-actions">
+          <a class="button button-ghost" href="index.html#home">返回网站</a>
+          <button class="icon-button" id="adminTheme" type="button" aria-label="Toggle dark mode">☾</button>
+        </div>
+      </header>
+
+      <section class="admin-grid">
+        <aside class="admin-sidebar">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">POSTS</span>
+              <h2>文章</h2>
+            </div>
+            <button class="button button-primary" id="newPost" type="button">新建</button>
+          </div>
+          <div class="admin-post-list" id="adminPostList"></div>
+          <div class="admin-export-row">
+            <button class="button button-ghost" id="importMarkdown" type="button">导入 Markdown</button>
+            <button class="button button-ghost" id="exportAll" type="button">导出全部</button>
+            <input id="markdownFile" type="file" accept=".md,.markdown" hidden />
+          </div>
+        </aside>
+
+        <section class="admin-editor panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">EDITOR</span>
+              <h2 id="editorTitle">新文章</h2>
+            </div>
+            <div class="editor-actions">
+              <button class="button button-ghost" id="previewPost" type="button">预览</button>
+              <button class="button button-primary" id="savePost" type="button">保存草稿</button>
+            </div>
+          </div>
+          <div class="editor-form">
+            <label>标题<input id="postTitle" type="text" placeholder="输入文章标题" /></label>
+            <div class="form-row">
+              <label>日期<input id="postDate" type="date" /></label>
+              <label>分类<input id="postCategory" type="text" placeholder="例如：学习" /></label>
+            </div>
+            <label>标签<input id="postTags" type="text" placeholder="用逗号分隔，例如：AI, Python" /></label>
+            <label>摘要<textarea id="postExcerpt" rows="2" placeholder="首页卡片摘要"></textarea></label>
+            <label>正文（Markdown）<textarea id="postContent" rows="18" placeholder="# 文章标题\n\n在这里写内容。"></textarea></label>
+          </div>
+          <div class="editor-footer">
+            <span id="saveStatus">本地草稿不会自动上传到 GitHub。</span>
+            <button class="button button-danger" id="deletePost" type="button">删除草稿</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="admin-help panel">
+        <div>
+          <span class="eyebrow">PUBLISH FLOW</span>
+          <h2>从管理台到线上网站</h2>
+        </div>
+        <ol>
+          <li>在这里保存或导出 Markdown。</li>
+          <li>把文件放入 <code>content/posts/</code>。</li>
+          <li>运行 <code>npm run build</code> 生成文章索引、RSS、Sitemap 和 robots.txt。</li>
+          <li>运行 <code>npm run dev</code> 检查页面，再提交到 GitHub Pages。</li>
+        </ol>
+        <p class="muted">GitHub Pages 只能托管静态文件，因此管理台默认保存到当前浏览器并导出文件；它不会在前端保存 GitHub Token。</p>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="admin.js"></script>
+  </body>
+</html>

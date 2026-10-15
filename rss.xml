@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>QXY Web</title><link>https://stephen0430.github.io/Personal-Website</link><description>生活就像海洋，只有意志坚强的人，才能到达彼岸。</description>
+  <item>
+    <title>QXY Web，先从这里开始</title>
+    <link>https://stephen0430.github.io/Personal-Website/?post=welcome</link>
+    <guid>https://stephen0430.github.io/Personal-Website/?post=welcome</guid>
+    <pubDate>Thu, 15 Oct 2026 00:00:00 GMT</pubDate>
+    <description>这是 QXY Web 的第一篇文章，用来记录我为什么开始写一个属于自己的网站。</description>
+  </item>
+  <item>
+    <title>机器视觉学习笔记：先把问题说清楚</title>
+    <link>https://stephen0430.github.io/Personal-Website/?post=vision-notes</link>
+    <guid>https://stephen0430.github.io/Personal-Website/?post=vision-notes</guid>
+    <pubDate>Wed, 14 Oct 2026 00:00:00 GMT</pubDate>
+    <description>学习视觉模型时，先把输入、输出、评价指标和失败边界写清楚，往往比记住网络结构更重要。</description>
+  </item>
+  <item>
+    <title>项目复盘应该留下什么</title>
+    <link>https://stephen0430.github.io/Personal-Website/?post=project-review-template</link>
+    <guid>https://stephen0430.github.io/Personal-Website/?post=project-review-template</guid>
+    <pubDate>Tue, 13 Oct 2026 00:00:00 GMT</pubDate>
+    <description>项目复盘不是把结果重新讲一遍，而是让未来的自己知道当时做了哪些判断。</description>
+  </item>
+</channel></rss>

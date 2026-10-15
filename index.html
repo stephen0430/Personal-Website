@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eef6f8" />
+    <meta name="description" content="QXY Web · Xinyan Qin 的个人网站" />
+    <title>QXY Web · Xinyan Qin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar" id="topbar">
+        <a class="brand" href="#home" aria-label="QXY Web home">
+          <span class="brand-mark">Q</span>
+          <span>
+            <strong>QXY Web</strong>
+            <small>Xinyan Qin</small>
+          </span>
+        </a>
+        <nav class="desktop-nav" aria-label="Primary navigation">
+          <a href="#home" data-i18n="nav.home">首页</a>
+          <a href="#archive" data-i18n="nav.archive">归档</a>
+          <a href="#categories" data-i18n="nav.categories">分类</a>
+          <a href="#tags" data-i18n="nav.tags">标签</a>
+          <a href="#about" data-i18n="nav.about">关于</a>
+        </nav>
+        <div class="topbar-actions">
+          <button class="icon-button" id="searchButton" type="button" aria-label="Search">⌕</button>
+          <button class="icon-button" id="languageButton" type="button" aria-label="Switch language">中</button>
+          <button class="icon-button" id="themeButton" type="button" aria-label="Toggle dark mode">☾</button>
+          <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Open menu">≡</button>
+        </div>
+      </header>
+
+      <main id="app" tabindex="-1"></main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div>
+            <strong>QXY Web</strong>
+            <span>© 2026 Xinyan Qin</span>
+          </div>
+          <div class="footer-links">
+            <a href="rss.xml">RSS</a>
+            <a href="sitemap.xml">Sitemap</a>
+            <a href="admin.html">Admin</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <aside class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+      <div class="drawer-panel">
+        <div class="drawer-head">
+          <div>
+            <span class="eyebrow">QXY / 2026</span>
+            <strong>Navigation</strong>
+          </div>
+          <button class="icon-button" id="drawerClose" type="button" aria-label="Close menu">×</button>
+        </div>
+        <nav class="drawer-nav" aria-label="Mobile navigation">
+          <a href="#home" data-i18n="nav.home">首页</a>
+          <a href="#archive" data-i18n="nav.archive">归档</a>
+          <a href="#categories" data-i18n="nav.categories">分类</a>
+          <a href="#tags" data-i18n="nav.tags">标签</a>
+          <a href="#about" data-i18n="nav.about">关于</a>
+          <a href="admin.html">管理台</a>
+        </nav>
+        <div class="drawer-note">机器视觉 / 大模型 / 个人记录</div>
+      </div>
+    </aside>
+
+    <section class="search-layer" id="searchLayer" aria-hidden="true">
+      <div class="search-box">
+        <div class="search-head">
+          <div>
+            <span class="eyebrow">QXY SEARCH</span>
+            <h2 data-i18n="search.title">搜索文章</h2>
+          </div>
+          <button class="icon-button" id="searchClose" type="button" aria-label="Close search">×</button>
+        </div>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="输入标题、标签或关键词" data-i18n-placeholder="search.placeholder" />
+        <div class="search-results" id="searchResults"></div>
+      </div>
+    </section>
+
+    <button class="back-top" id="backTop" type="button" aria-label="Back to top">↑</button>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
