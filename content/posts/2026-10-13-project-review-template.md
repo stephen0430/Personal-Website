@@ -1,10 +1,14 @@
 ---
 title: 项目复盘应该留下什么
+titleEn: What a Project Review Should Keep
 date: 2026-10-13
 category: 项目复盘
+categoryEn: Project Review
 tags: [自动化, Python, AI]
+tagsEn: [Automation, Python, AI]
 cover: /assets/cover.webp
 excerpt: 项目复盘不是把结果重新讲一遍，而是让未来的自己知道当时做了哪些判断。
+excerptEn: A useful project review preserves the decisions and trade-offs that help the future version of you move faster.
 ---
 
 一篇有用的项目复盘，至少应该回答三个问题：当时遇到了什么，为什么这样解决，下一次会怎么做。

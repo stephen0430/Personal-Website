@@ -1,10 +1,14 @@
 ---
 title: 机器视觉学习笔记：先把问题说清楚
+titleEn: Computer Vision Notes: Define the Problem First
 date: 2026-10-14
 category: 学习
+categoryEn: Learning
 tags: [AI, 机器学习, 深度学习]
+tagsEn: [AI, Machine Learning, Deep Learning]
 cover: /assets/cover.webp
 excerpt: 学习视觉模型时，先把输入、输出、评价指标和失败边界写清楚，往往比记住网络结构更重要。
+excerptEn: When learning vision models, defining inputs, outputs, metrics and failure boundaries matters more than memorizing architectures.
 ---
 
 机器视觉的学习经常从模型名字开始，但真正决定项目能不能落地的，通常是问题定义。

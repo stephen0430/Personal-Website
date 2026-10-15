@@ -3,12 +3,16 @@
   "displayName": "Xinyan Qin",
   "subtitle": "生活就像海洋，只有意志坚强的人，才能到达彼岸。",
   "englishSubtitle": "Life is like the sea; only the strong-willed can reach the other shore.",
+  "createdAt": "2026-10-15T00:00:00+08:00",
   "avatar": "/assets/avatar.webp",
   "hero": "/assets/hero.webp",
   "defaultCover": "/assets/cover.webp",
-  "profession": "（本）人工智能 · （研）动力工程",
+  "profession": "人工智能 · 动力工程",
+  "englishProfession": "Artificial Intelligence · Power Engineering",
   "research": "机器视觉 / 大模型",
+  "englishResearch": "Computer Vision / Large Models",
   "bio": "04 年生，正在人工智能与动力工程之间寻找更好的问题。这里记录学习、项目、生活和仍在路上的想法。",
+  "englishBio": "Born in 2004, exploring better questions between artificial intelligence and power engineering. This is where I keep notes on learning, projects and life.",
   "links": [
     {
       "label": "GitHub",
