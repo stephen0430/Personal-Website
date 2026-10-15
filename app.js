@@ -5,6 +5,11 @@ const state = {
   theme: localStorage.getItem('qxy-theme') || 'light'
 }
 
+const basePath = location.hostname.endsWith('.github.io')
+  ? `/${location.pathname.split('/').filter(Boolean)[0] || ''}`
+  : ''
+const assetUrl = value => String(value || '').startsWith('/') ? `${basePath}${value}` : value
+
 const app = document.querySelector('#app')
 const html = document.documentElement
 const toast = document.querySelector('#toast')
@@ -145,7 +150,7 @@ const renderHeaderText = () => {
 }
 
 const renderHero = () => `
-  <section class="hero" id="home-hero">
+  <section class="hero" id="home-hero" style="--hero-image: url('${assetUrl(state.site.hero)}')">
     <div class="hero-content">
       <span class="hero-kicker">QXY WEB / PERSONAL ARCHIVE</span>
       <h1>${escapeHtml(state.site.name)}</h1>
@@ -162,7 +167,7 @@ const renderHero = () => `
 const renderProfile = () => {
   const visits = Number(localStorage.getItem('qxy-visits') || 0)
   return `<div class="side-card profile-card">
-    <img src="${safeUrl(state.site.avatar)}" alt="${escapeHtml(state.site.displayName)}" />
+    <img src="${safeUrl(assetUrl(state.site.avatar))}" alt="${escapeHtml(state.site.displayName)}" />
     <h3>${escapeHtml(state.site.displayName)}</h3>
     <p>${escapeHtml(state.site.bio)}</p>
     <div class="profile-links">${state.site.links.map(link => `<a href="${safeUrl(link.url)}" target="_blank" rel="noreferrer">${escapeHtml(link.label)}</a>`).join('')}</div>
@@ -181,13 +186,13 @@ const renderSidebar = () => {
 }
 
 const renderPostCard = post => `<article class="post-card">
-  <a class="post-cover" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(post.cover || state.site.defaultCover)}" alt="${escapeHtml(post.title)}" loading="lazy" /></a>
+  <a class="post-cover" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(post.title)}" loading="lazy" /></a>
   <div class="post-info"><div class="post-meta"><time>${formatDate(post.date)}</time><span>·</span><a href="#category/${encodeURIComponent(post.category)}">${escapeHtml(post.category)}</a></div><h3><a href="#post/${encodeURIComponent(post.slug)}">${escapeHtml(post.title)}</a></h3><p>${escapeHtml(post.excerpt)}</p><div class="post-tags">${post.tags.map(tag => `<a class="tag-chip" href="#tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join('')}</div></div>
 </article>`
 
 const renderHome = () => `${renderHero()}<section class="page-section" id="latest"><div class="section-heading"><div><span class="eyebrow">QXY NOTES</span><h2>${t('home.latest')}</h2></div><div><p>${t('home.latestDesc')}</p><a class="section-link" href="#archive">${t('home.all')} →</a></div></div><div class="home-layout"><div class="post-grid">${sortedPosts().map(renderPostCard).join('')}</div>${renderSidebar()}</div></section>`
 
-const renderPageBanner = (label, title) => `<section class="page-banner"><div class="page-banner-inner"><span class="eyebrow">${escapeHtml(label)}</span><h1>${escapeHtml(title)}</h1></div></section>`
+const renderPageBanner = (label, title) => `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><span class="eyebrow">${escapeHtml(label)}</span><h1>${escapeHtml(title)}</h1></div></section>`
 
 const renderArchive = () => {
   const grouped = sortedPosts().reduce((map, post) => { const year = post.date.slice(0,4); (map[year] ||= []).push(post); return map }, {})
@@ -215,7 +220,7 @@ const renderArticle = post => {
   const viewKey = `qxy-view-${post.slug}`
   localStorage.setItem(viewKey, String(Number(localStorage.getItem(viewKey) || 0) + 1))
   document.title = `${post.title} · ${state.site.name}`
-  return `<section class="page-banner"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(post.title)}</h1><div class="post-meta"><time>${formatDate(post.date)}</time><span>·</span><span>${escapeHtml(post.category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section><section class="page-section"><div class="article-layout"><article class="article-card"><div class="article-cover"><img src="${safeUrl(post.cover || state.site.defaultCover)}" alt="${escapeHtml(post.title)}" data-lightbox /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category)}</span><h1>${escapeHtml(post.title)}</h1><p>${formatDate(post.date)} · ${post.tags.map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div><section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section></div></article><aside class="article-aside"><div class="toc-card"><h3>${t('article.toc')}</h3>${headings.length ? headings.map((heading, index) => { const id = heading.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index}`; return `<a href="#${id}">${index + 1}. ${escapeHtml(heading)}</a>` }).join('') : `<span class="muted">${t('empty')}</span>`}</div>${renderProfile()}</aside></div></section>`
+  return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(post.title)}</h1><div class="post-meta"><time>${formatDate(post.date)}</time><span>·</span><span>${escapeHtml(post.category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section><section class="page-section"><div class="article-layout"><article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(post.title)}" data-lightbox /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category)}</span><h1>${escapeHtml(post.title)}</h1><p>${formatDate(post.date)} · ${post.tags.map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div><section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section></div></article><aside class="article-aside"><div class="toc-card"><h3>${t('article.toc')}</h3>${headings.length ? headings.map((heading, index) => { const id = heading.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index}`; return `<a href="#${id}">${index + 1}. ${escapeHtml(heading)}</a>` }).join('') : `<span class="muted">${t('empty')}</span>`}</div>${renderProfile()}</aside></div></section>`
 }
 
 const renderFiltered = (type, value) => {

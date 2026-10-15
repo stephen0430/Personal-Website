@@ -127,7 +127,7 @@ img { display: block; max-width: 100%; }
   overflow: hidden;
   color: #fff;
   background-color: #196f88;
-  background-image: url('/assets/hero.webp');
+  background-image: var(--hero-image);
   background-position: center 42%;
   background-size: cover;
 }
@@ -213,7 +213,7 @@ img { display: block; max-width: 100%; }
 .side-list small { color: var(--muted); }
 .side-tag-cloud { display: flex; gap: 7px; flex-wrap: wrap; }
 
-.page-banner { padding: 146px 0 58px; color: #fff; background-color: #146a82; background-image: url('/assets/hero.webp'); background-position: center 38%; background-size: cover; position: relative; }
+.page-banner { padding: 146px 0 58px; color: #fff; background-color: #146a82; background-image: var(--hero-image); background-position: center 38%; background-size: cover; position: relative; }
 .page-banner::before { position: absolute; inset: 0; content: ""; background: rgba(13, 102, 128, 0.76); }
 .page-banner-inner { position: relative; width: min(100% - 32px, var(--content)); margin: auto; }
 .page-banner h1 { margin: 12px 0 0; font-size: 3rem; line-height: 1.1; }
