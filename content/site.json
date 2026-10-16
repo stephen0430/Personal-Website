@@ -58,5 +58,6 @@
     "category": "",
     "categoryId": ""
   },
-  "baseUrl": "https://stephen0430.github.io/Personal-Website"
+  "baseUrl": "https://stephen0430.github.io/Personal-Website",
+  "publicationApi": "https://YOUR-VERCEL-APP.vercel.app"
 }

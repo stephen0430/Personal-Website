@@ -47,6 +47,7 @@
             <div class="editor-actions">
               <button class="button button-ghost" id="previewPost" type="button">预览</button>
               <button class="button button-primary" id="savePost" type="button">保存草稿</button>
+              <button class="button button-primary" id="publishPost" type="button">发布到网站</button>
             </div>
           </div>
           <div class="editor-form">
@@ -61,6 +62,7 @@
           </div>
           <div class="editor-footer">
             <span id="saveStatus">本地草稿不会自动上传到 GitHub。</span>
+            <button class="button button-ghost" id="loginGithub" type="button">登录 GitHub</button>
             <button class="button button-danger" id="deletePost" type="button">删除草稿</button>
           </div>
         </section>
@@ -77,7 +79,7 @@
           <li>运行 <code>npm run build</code> 生成文章索引、RSS、Sitemap 和 robots.txt。</li>
           <li>运行 <code>npm run dev</code> 检查页面，再提交到 GitHub Pages。</li>
         </ol>
-        <p class="muted">GitHub Pages 只能托管静态文件，因此管理台默认保存到当前浏览器并导出文件；它不会在前端保存 GitHub Token。</p>
+        <p class="muted">发布功能通过独立的 OAuth 后端完成，GitHub Token 只保存在服务端会话中，不会写入浏览器或公开网页。</p>
       </section>
     </main>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

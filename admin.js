@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'qxy-drafts'
 const html = document.documentElement
 const toast = document.querySelector('#toast')
-const state = { posts: [], active: null, theme: localStorage.getItem('qxy-theme') || 'light' }
+const state = { posts: [], active: null, theme: localStorage.getItem('qxy-theme') || 'light', site: null, authenticated: false }
 
 const showToast = message => {
   toast.textContent = message
@@ -19,6 +19,36 @@ const setTheme = theme => {
 
 const saveDrafts = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state.posts))
 const slugify = title => title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `post-${Date.now()}`
+const apiBase = () => String(state.site?.publicationApi || '').replace(/\/$/, '')
+const isApiConfigured = () => apiBase() && !apiBase().includes('YOUR-VERCEL-APP')
+const returnUrl = () => `${location.origin}${location.pathname}`
+
+const publishLogin = () => {
+  if (!isApiConfigured()) {
+    showToast('还没有配置发布后端，请先部署 Vercel API')
+    return
+  }
+  location.href = `${apiBase()}/api/auth/login?return=${encodeURIComponent(returnUrl())}`
+}
+
+const checkAuth = async () => {
+  if (!isApiConfigured()) {
+    document.querySelector('#publishPost').disabled = true
+    document.querySelector('#loginGithub').textContent = '等待配置发布后端'
+    document.querySelector('#saveStatus').textContent = '发布后端尚未配置，当前可保存草稿或导出 Markdown。'
+    return false
+  }
+  document.querySelector('#publishPost').disabled = false
+  try {
+    const response = await fetch(`${apiBase()}/api/auth/me`, { credentials: 'include' })
+    const data = await response.json()
+    state.authenticated = Boolean(data.authenticated)
+    document.querySelector('#loginGithub').textContent = state.authenticated ? `GitHub：${data.login}` : '登录 GitHub'
+    return state.authenticated
+  } catch {
+    return false
+  }
+}
 
 const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: new Date().toISOString().slice(0, 10), category: '随笔', tags: [], excerpt: '', content: '' })
 
@@ -68,6 +98,39 @@ const upsertCurrent = () => {
   return current
 }
 
+const publishCurrent = async () => {
+  const current = upsertCurrent()
+  if (!current) return
+  if (!isApiConfigured()) {
+    showToast('还没有配置发布后端，请先部署 Vercel API')
+    return
+  }
+  if (!await checkAuth()) {
+    publishLogin()
+    return
+  }
+  const button = document.querySelector('#publishPost')
+  button.disabled = true
+  button.textContent = '发布中…'
+  document.querySelector('#saveStatus').textContent = '正在提交到 GitHub…'
+  try {
+    const response = await fetch(`${apiBase()}/api/publish`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(current)
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || '发布失败')
+    document.querySelector('#saveStatus').textContent = `已提交到 GitHub：${data.path}`
+    showToast('发布成功，网站会自动部署')
+  } catch (error) {
+    document.querySelector('#saveStatus').textContent = error.message
+    showToast(error.message)
+  } finally {
+    button.disabled = false
+    button.textContent = '发布到网站'
+  }
+}
+
 const download = (filename, content, type = 'text/plain;charset=utf-8') => {
   const blob = new Blob([content], { type })
   const link = document.createElement('a')
@@ -87,6 +150,7 @@ const parseMarkdown = raw => {
 
 const init = async () => {
   setTheme(state.theme)
+  try { state.site = await (await fetch('content/site.json')).json() } catch { state.site = {} }
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
   if (Array.isArray(stored) && stored.length) state.posts = stored
   else {
@@ -100,11 +164,17 @@ const init = async () => {
   document.querySelector('#adminTheme').addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'))
   document.querySelector('#newPost').addEventListener('click', () => { const post = blankPost(); state.posts.unshift(post); state.active = post.id; fillForm(post); renderList() })
   document.querySelector('#savePost').addEventListener('click', upsertCurrent)
+  document.querySelector('#publishPost').addEventListener('click', publishCurrent)
+  document.querySelector('#loginGithub').addEventListener('click', publishLogin)
   document.querySelector('#deletePost').addEventListener('click', () => { if (!state.active) return; state.posts = state.posts.filter(post => post.id !== state.active); const next = state.posts[0] || blankPost(); if (!state.posts.length) state.posts.push(next); state.active = next.id; fillForm(next); saveDrafts(); renderList(); showToast('草稿已删除') })
   document.querySelector('#previewPost').addEventListener('click', () => { const current = readForm(); const preview = new Blob([toMarkdown(current)], { type: 'text/markdown;charset=utf-8' }); window.open(URL.createObjectURL(preview), '_blank') })
   document.querySelector('#exportAll').addEventListener('click', () => { const current = upsertCurrent(); if (current) download(`${current.slug}.md`, toMarkdown(current), 'text/markdown;charset=utf-8') })
   document.querySelector('#importMarkdown').addEventListener('click', () => document.querySelector('#markdownFile').click())
   document.querySelector('#markdownFile').addEventListener('change', async event => { const file = event.target.files[0]; if (!file) return; const post = parseMarkdown(await file.text()); post.id = `draft-${Date.now()}`; state.posts.unshift(post); state.active = post.id; fillForm(post); saveDrafts(); renderList(); showToast('Markdown 已导入本机') })
+  const params = new URLSearchParams(location.search)
+  if (params.get('auth') === 'success') showToast('GitHub 登录成功')
+  if (params.get('auth') === 'error') showToast('GitHub 登录失败')
+  await checkAuth()
 }
 
 init()
