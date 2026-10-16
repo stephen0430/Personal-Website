@@ -2,7 +2,8 @@ const state = {
   site: null,
   posts: [],
   lang: localStorage.getItem('qxy-lang') || 'zh',
-  theme: localStorage.getItem('qxy-theme') || 'light'
+  theme: localStorage.getItem('qxy-theme') || 'light',
+  typingTimer: null
 }
 
 const basePath = location.hostname.endsWith('.github.io')
@@ -19,7 +20,7 @@ const dictionary = {
     'nav.home': '首页', 'nav.archive': '归档', 'nav.categories': '分类', 'nav.tags': '标签', 'nav.about': '关于',
     'search.title': '搜索文章', 'search.placeholder': '输入标题、标签或关键词', 'home.latest': '最近更新',
     'home.latestDesc': '把正在学习的东西，认真留下来。', 'home.all': '查看全部', 'home.archive': '时间轴',
-    'home.profile': '关于我', 'home.categories': '分类', 'home.tags': '常用标签', 'home.stats': '网站信息',
+    'home.profile': '关于我', 'home.categories': '分类', 'home.tags': '常用标签', 'home.archivePanel': '归档', 'home.stats': '网站信息',
     'home.posts': '文章', 'home.words': '总字数', 'home.views': '访问量', 'home.rss': 'RSS', 'home.sitemap': '站点地图', 'home.admin': '管理台', 'home.subscribe': '订阅', 'home.view': '查看', 'home.manage': '管理', 'article.back': '返回首页',
     'article.comments': '评论', 'article.commentsHint': '评论区已预留，配置 Giscus 后即可启用。',
     'article.toc': '目录', 'article.copy': '复制', 'article.copied': '已复制', 'about.title': '关于 QXY Web',
@@ -30,7 +31,7 @@ const dictionary = {
     'nav.home': 'Home', 'nav.archive': 'Archive', 'nav.categories': 'Categories', 'nav.tags': 'Tags', 'nav.about': 'About',
     'search.title': 'Search posts', 'search.placeholder': 'Search title, tag or keyword', 'home.latest': 'Latest notes',
     'home.latestDesc': 'Keeping the things I am learning, one note at a time.', 'home.all': 'View all', 'home.archive': 'Timeline',
-    'home.profile': 'About me', 'home.categories': 'Categories', 'home.tags': 'Common tags', 'home.stats': 'Site info',
+    'home.profile': 'About me', 'home.categories': 'Categories', 'home.tags': 'Common tags', 'home.archivePanel': 'Archive', 'home.stats': 'Site info',
     'home.posts': 'Posts', 'home.words': 'Words', 'home.views': 'Visits', 'home.rss': 'RSS', 'home.sitemap': 'Sitemap', 'home.admin': 'Admin', 'home.subscribe': 'Subscribe', 'home.view': 'View', 'home.manage': 'Manage', 'article.back': 'Back home',
     'article.comments': 'Comments', 'article.commentsHint': 'The comment area is ready for Giscus configuration.',
     'article.toc': 'On this page', 'article.copy': 'Copy', 'article.copied': 'Copied', 'about.title': 'About QXY Web',
@@ -160,12 +161,7 @@ const renderHero = () => `
   <section class="hero" id="home-hero" style="--hero-image: url('${assetUrl(state.site.hero)}')">
     <div class="hero-content">
       <h1>${escapeHtml(state.site.name)}</h1>
-      <p class="hero-subtitle">${escapeHtml(state.lang === 'zh' ? state.site.subtitle : state.site.englishSubtitle)}</p>
-      <div class="hero-meta">
-        <span>${escapeHtml(localizedSite('profession'))}</span>
-        <span>${escapeHtml(localizedSite('research'))}</span>
-      </div>
-      <div class="hero-socials">${state.site.links.map(link => `<a href="${safeUrl(link.url)}" target="_blank" rel="noreferrer">${escapeHtml(link.label)}</a>`).join('')}</div>
+      <p class="hero-subtitle"><span id="heroTyped"></span><span class="type-cursor" aria-hidden="true"></span></p>
     </div>
     <a class="hero-scroll" href="#latest" aria-label="Scroll down">⌄</a>
   </section>`
@@ -184,10 +180,22 @@ const renderProfile = () => {
 const renderSidebar = () => {
   const categories = countBy('category')
   const tags = countBy('tags')
+  const archives = sortedPosts().reduce((map, post) => {
+    const key = post.date.slice(0, 7)
+    map[key] = (map[key] || 0) + 1
+    return map
+  }, {})
+  const archiveLabel = key => {
+    const [year, month] = key.split('-')
+    return state.lang === 'en'
+      ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long' }).format(new Date(`${key}-01T00:00:00`))
+      : `${year}年${Number(month)}月`
+  }
   return `<aside class="sidebar">${renderProfile()}
     <div class="side-card"><h3>${t('home.categories')}</h3><ul class="side-list">${Object.entries(categories).map(([name, count]) => `<li><a href="#category/${encodeURIComponent(name)}">${escapeHtml(name)}<small>${count}</small></a></li>`).join('')}</ul></div>
     <div class="side-card"><h3>${t('home.tags')}</h3><div class="side-tag-cloud">${Object.entries(tags).sort((a,b) => b[1]-a[1]).slice(0, 12).map(([name, count]) => `<a class="tag-chip" href="#tag/${encodeURIComponent(name)}">${escapeHtml(name)} ${count}</a>`).join('')}</div></div>
-    <div class="side-card"><h3>${t('home.stats')}</h3><ul class="side-list"><li><span>RSS</span><a href="rss.xml">${t('home.subscribe')}</a></li><li><span>Sitemap</span><a href="sitemap.xml">${t('home.view')}</a></li><li><span>Admin</span><a href="admin.html">${t('home.manage')}</a></li></ul></div>
+    <div class="side-card"><h3>${t('home.archivePanel')}</h3><ul class="side-list archive-side-list">${Object.entries(archives).map(([key, count]) => `<li><a href="#archive">${escapeHtml(archiveLabel(key))}<small>${count}</small></a></li>`).join('')}</ul></div>
+    <div class="side-card"><h3>${t('home.stats')}</h3><ul class="side-list"><li><span>RSS</span><a href="rss.xml">${t('home.subscribe')}</a></li><li><span>Sitemap</span><a href="sitemap.xml">${t('home.view')}</a></li></ul></div>
   </aside>`
 }
 
@@ -237,6 +245,20 @@ const renderFiltered = (type, value) => {
   return `${renderPageBanner(label, value)}<section class="page-section"><div class="home-layout"><div class="post-grid">${posts.length ? posts.map(renderPostCard).join('') : `<div class="content-panel cloud-panel">${t('empty')}</div>`}</div>${renderSidebar()}</div></section>`
 }
 
+const startHeroTyping = () => {
+  clearInterval(state.typingTimer)
+  const target = document.querySelector('#heroTyped')
+  if (!target) return
+  const phrase = state.lang === 'zh' ? state.site.subtitle : state.site.englishSubtitle
+  let index = 0
+  target.textContent = ''
+  state.typingTimer = setInterval(() => {
+    target.textContent = phrase.slice(0, index)
+    index += 1
+    if (index > phrase.length) clearInterval(state.typingTimer)
+  }, 82)
+}
+
 const route = () => {
   const queryPost = new URLSearchParams(location.search).get('post')
   if (queryPost) {
@@ -260,6 +282,7 @@ const render = () => {
   app.innerHTML = route()
   renderHeaderText()
   updateFooterRuntime()
+  startHeroTyping()
   app.focus({ preventScroll: true })
   bindArticleActions()
 }

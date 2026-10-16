@@ -157,7 +157,9 @@ img { display: block; max-width: 100%; }
   text-transform: uppercase;
 }
 .hero h1 { margin: 18px 0 12px; font-size: 4.8rem; line-height: 1.05; letter-spacing: 0; }
-.hero-subtitle { max-width: 680px; margin: 0 auto; font-size: 1.15rem; opacity: 0.9; }
+.hero-subtitle { display: flex; justify-content: center; align-items: baseline; min-height: 1.9em; max-width: 680px; margin: 0 auto; font-size: 1.15rem; opacity: 0.9; }
+.type-cursor { display: inline-block; width: 2px; height: 1.05em; margin-left: 4px; background: currentColor; vertical-align: -0.12em; animation: cursorBlink 900ms steps(1) infinite; }
+@keyframes cursorBlink { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
 .hero-meta { display: flex; justify-content: center; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
 .hero-meta a, .hero-meta span { padding: 6px 12px; border: 1px solid rgba(255,255,255,0.36); border-radius: 999px; font-size: 0.78rem; background: rgba(4, 48, 65, 0.22); }
 .hero-socials { display: flex; justify-content: center; gap: 10px; margin-top: 24px; }
@@ -175,8 +177,8 @@ img { display: block; max-width: 100%; }
 .post-grid { display: grid; gap: 18px; }
 .post-card {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  min-height: 210px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  min-height: 180px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -185,10 +187,10 @@ img { display: block; max-width: 100%; }
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 .post-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.post-cover { min-height: 100%; background: var(--surface-soft); }
-.post-cover img { width: 100%; height: 100%; min-height: 210px; object-fit: cover; }
-.post-info { padding: 24px 26px 22px; }
-.post-info h3 { margin: 8px 0 10px; font-size: 1.42rem; line-height: 1.28; }
+.post-cover { height: 180px; background: var(--surface-soft); }
+.post-cover img { width: 100%; height: 180px; min-height: 0; object-fit: cover; }
+.post-info { padding: 18px 20px 16px; }
+.post-info h3 { margin: 6px 0 8px; font-size: 1.2rem; line-height: 1.28; }
 .post-info p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 .post-meta { display: flex; gap: 9px; flex-wrap: wrap; color: var(--muted); font-size: 0.76rem; }
 .post-meta a { color: var(--accent); }
@@ -212,6 +214,7 @@ img { display: block; max-width: 100%; }
 .side-list a { display: flex; justify-content: space-between; gap: 12px; font-size: 0.82rem; }
 .side-list small { color: var(--muted); }
 .side-tag-cloud { display: flex; gap: 7px; flex-wrap: wrap; }
+.archive-side-list { max-height: 250px; overflow: auto; padding-right: 4px; }
 
 .page-banner { padding: 146px 0 58px; color: #fff; background-color: #146a82; background-image: var(--hero-image); background-position: center 38%; background-size: cover; position: relative; }
 .page-banner::before { position: absolute; inset: 0; content: ""; background: rgba(13, 102, 128, 0.76); }
@@ -370,7 +373,8 @@ code { padding: 2px 5px; border-radius: 4px; color: var(--accent-strong); backgr
   .section-heading h2 { font-size: 1.65rem; }
   .section-heading p { margin-top: 8px; }
   .post-card { grid-template-columns: 1fr; }
-  .post-cover img { height: 210px; min-height: 0; }
+  .post-cover { height: 130px; }
+  .post-cover img { height: 130px; min-height: 0; }
   .post-info { padding: 20px; }
   .post-info h3 { font-size: 1.24rem; }
   .sidebar, .article-aside, .tax-grid, .friends-grid { grid-template-columns: 1fr; }
