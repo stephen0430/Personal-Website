@@ -26,6 +26,8 @@ https://qxy-web-api.vercel.app/api/auth/callback
 
 不要把 Client Secret 写进仓库。
 
+这个仓库是公开仓库，发布接口需要 `public_repo` 权限。当前实现使用 `state` 和 PKCE（`code_challenge` / `code_verifier`）保护授权流程。当前实现没有处理 GitHub 的短期 access token 刷新，因此在 OAuth App 创建页面如果看到 `Expire user access tokens`，先取消勾选；否则登录一段时间后会需要重新授权。GitHub 的 OAuth 文档说明 `public_repo` 提供公开仓库代码的读写权限，并建议使用 PKCE。citeturn0search0turn0search1turn0search3
+
 ## 3. 配置 Vercel 环境变量
 
 ```text
