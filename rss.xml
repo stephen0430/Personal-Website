@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>QXY Web</title><link>https://stephen0430.github.io/Personal-Website</link><description>生活就像海洋，只有意志坚强的人，才能到达彼岸。</description>
   <item>
+    <title>Cloudflare Pages + GitHub OAuth</title>
+    <link>https://stephen0430.github.io/Personal-Website/?post=cloudflare-pages-github-oauth</link>
+    <guid>https://stephen0430.github.io/Personal-Website/?post=cloudflare-pages-github-oauth</guid>
+    <pubDate>Sat, 17 Oct 2026 00:00:00 GMT</pubDate>
+    <description></description>
+  </item>
+  <item>
     <title>QXY Web，先从这里开始</title>
     <link>https://stephen0430.github.io/Personal-Website/?post=welcome</link>
     <guid>https://stephen0430.github.io/Personal-Website/?post=welcome</guid>
