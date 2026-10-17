@@ -19,13 +19,17 @@ const setTheme = theme => {
 
 const saveDrafts = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state.posts))
 const slugify = title => title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `post-${Date.now()}`
-const apiBase = () => String(state.site?.publicationApi || '').replace(/\/$/, '')
-const isApiConfigured = () => apiBase() && !apiBase().includes('YOUR-VERCEL-APP')
+const apiBase = () => {
+  const configured = String(state.site?.publicationApi || '').replace(/\/$/, '')
+  if (configured && !configured.includes('YOUR-CLOUDFLARE-PAGES')) return configured
+  return location.hostname.endsWith('.pages.dev') ? location.origin : ''
+}
+const isApiConfigured = () => Boolean(apiBase())
 const returnUrl = () => `${location.origin}${location.pathname}`
 
 const publishLogin = () => {
   if (!isApiConfigured()) {
-    showToast('还没有配置发布后端，请先部署 Vercel API')
+    showToast('还没有配置发布后端，请先部署 Cloudflare Pages')
     return
   }
   location.href = `${apiBase()}/api/auth/login?return=${encodeURIComponent(returnUrl())}`
@@ -102,7 +106,7 @@ const publishCurrent = async () => {
   const current = upsertCurrent()
   if (!current) return
   if (!isApiConfigured()) {
-    showToast('还没有配置发布后端，请先部署 Vercel API')
+    showToast('还没有配置发布后端，请先部署 Cloudflare Pages')
     return
   }
   if (!await checkAuth()) {
