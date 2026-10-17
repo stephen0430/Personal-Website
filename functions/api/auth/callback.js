@@ -26,36 +26,50 @@ export async function onRequestGet({ request, env }) {
     return fail(returnUrl, missing.includes('SESSION_SECRET') ? 'session_secret_missing' : 'oauth_config_missing', clearState)
   }
 
+  let tokenResponse
+  let token
   try {
-    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+    tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code: url.searchParams.get('code'), redirect_uri: env.GITHUB_CALLBACK_URL, code_verifier: saved.codeVerifier })
     })
-    const token = await tokenResponse.json()
-    if (!tokenResponse.ok || !token.access_token) {
-      console.error('GitHub OAuth token exchange failed', { status: tokenResponse.status, error: token.error || 'missing_access_token' })
-      return fail(returnUrl, 'token_exchange_failed', clearState)
-    }
-    const userResponse = await fetch('https://api.github.com/user', { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token.access_token}`, 'X-GitHub-Api-Version': '2022-11-28' } })
-    const user = await userResponse.json()
-    if (!userResponse.ok || !user.login) {
-      console.error('GitHub OAuth user lookup failed', { status: userResponse.status })
-      return fail(returnUrl, 'github_profile_failed', clearState)
-    }
-    if (user.login !== getConfig(env).allowedLogin) return fail(returnUrl, 'github_account_not_allowed', clearState)
-    let session
-    try {
-      session = await createSession(env, { login: user.login, accessToken: token.access_token })
-    } catch (error) {
-      console.error('GitHub OAuth session creation failed', { message: error.message })
-      return fail(returnUrl, 'session_creation_failed', clearState)
-    }
-    const response = new Response(null, { status: 302, headers: { Location: `${returnUrl}?auth=success` } })
-    response.headers.append('Set-Cookie', cookie(SESSION_COOKIE, session))
-    response.headers.append('Set-Cookie', clearCookie(STATE_COOKIE))
-    return response
   } catch (error) {
-    console.error('GitHub OAuth callback unexpected error', { message: error.message })
-    return fail(returnUrl, 'callback_internal_error', clearState)
+    console.error('GitHub OAuth token request failed', { message: error.message })
+    return fail(returnUrl, 'token_request_failed', clearState)
   }
+  try {
+    token = await tokenResponse.json()
+  } catch (error) {
+    console.error('GitHub OAuth token response was not JSON', { status: tokenResponse.status, message: error.message })
+    return fail(returnUrl, 'token_response_invalid', clearState)
+  }
+  if (!tokenResponse.ok || !token.access_token) {
+    console.error('GitHub OAuth token exchange failed', { status: tokenResponse.status, error: token.error || 'missing_access_token' })
+    return fail(returnUrl, 'token_exchange_failed', clearState)
+  }
+  let userResponse
+  let user
+  try {
+    userResponse = await fetch('https://api.github.com/user', { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token.access_token}`, 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'QXY-Web-Admin' } })
+    user = await userResponse.json()
+  } catch (error) {
+    console.error('GitHub OAuth profile request failed', { message: error.message })
+    return fail(returnUrl, 'github_profile_request_failed', clearState)
+  }
+  if (!userResponse.ok || !user.login) {
+    console.error('GitHub OAuth user lookup failed', { status: userResponse.status })
+    return fail(returnUrl, 'github_profile_failed', clearState)
+  }
+  if (user.login !== getConfig(env).allowedLogin) return fail(returnUrl, 'github_account_not_allowed', clearState)
+  let session
+  try {
+    session = await createSession(env, { login: user.login, accessToken: token.access_token })
+  } catch (error) {
+    console.error('GitHub OAuth session creation failed', { message: error.message })
+    return fail(returnUrl, 'session_creation_failed', clearState)
+  }
+  const response = new Response(null, { status: 302, headers: { Location: `${returnUrl}?auth=success` } })
+  response.headers.append('Set-Cookie', cookie(SESSION_COOKIE, session))
+  response.headers.append('Set-Cookie', clearCookie(STATE_COOKIE))
+  return response
 }
