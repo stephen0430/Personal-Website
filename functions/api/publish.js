@@ -26,7 +26,7 @@ export async function onRequestPost({ request, env }) {
     if (!post.title || !/^\d{4}-\d{2}-\d{2}$/.test(post.date || '') || !post.content) return withCors(request, env, json({ error: 'title, date and content are required' }, 400))
     const slug = slugify(post.slug || post.title)
     const filePath = `content/posts/${post.date}-${slug}.md`
-    const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${session.accessToken}`, 'X-GitHub-Api-Version': '2022-11-28' }
+    const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${session.accessToken}`, 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'QXY-Web-Publisher' }
     const existing = await fetch(`https://api.github.com/repos/${repository}/contents/${filePath}?ref=main`, { headers })
     const existingPayload = await readApiResponse(existing)
     const existingJson = existing.ok ? existingPayload.data : null
