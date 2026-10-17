@@ -4,7 +4,7 @@
 
 ## 1. 部署 API
 
-在 Vercel 中导入同一个 `Personal-Website` 仓库，项目根目录保持仓库根目录，Framework Preset 选择 `Other`。部署后得到一个地址，例如：
+在 Vercel 中导入同一个 `Personal-Website` 仓库，项目根目录保持仓库根目录，Framework Preset 选择 `Other`。Vercel 会同时托管 `api/` 接口和 `admin.html` 管理台。部署后得到一个地址，例如：
 
 ```text
 https://qxy-web-api.vercel.app
@@ -15,6 +15,14 @@ https://qxy-web-api.vercel.app
 ```json
 "publicationApi": "https://qxy-web-api.vercel.app"
 ```
+
+之后请使用 Vercel 地址打开管理台：
+
+```text
+https://qxy-web-api.vercel.app/admin.html
+```
+
+不要使用 GitHub Pages 上的 `admin.html` 做发布操作，因为管理台和 API 放在同一个 Vercel 域名下，登录 Cookie 才是同源的。
 
 ## 2. 创建 GitHub OAuth App
 
@@ -35,8 +43,8 @@ GITHUB_CLIENT_ID=你的 OAuth App Client ID
 GITHUB_CLIENT_SECRET=你的 OAuth App Client Secret
 GITHUB_CALLBACK_URL=https://qxy-web-api.vercel.app/api/auth/callback
 ALLOWED_GITHUB_LOGIN=stephen0430
-ADMIN_ORIGIN=https://stephen0430.github.io
-ADMIN_RETURN_URL=https://stephen0430.github.io/Personal-Website/admin.html
+ADMIN_ORIGIN=https://qxy-web-api.vercel.app
+ADMIN_RETURN_URL=https://qxy-web-api.vercel.app/admin.html
 SESSION_SECRET=一段至少 32 位的随机字符串
 ```
 
