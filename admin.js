@@ -161,6 +161,70 @@ const download = (filename, content, type = 'text/plain;charset=utf-8') => {
 
 const toMarkdown = post => `---\ntitle: ${post.title}\ndate: ${post.date}\ncategory: ${post.category}\ntags: [${post.tags.join(', ')}]\ncover: /assets/cover.webp\nexcerpt: ${post.excerpt}\n---\n\n${post.content.trim()}\n`
 
+const escapeHtml = value => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;')
+
+const renderPreviewMarkdown = markdown => {
+  const codeBlocks = []
+  const source = String(markdown || '').replace(/```(\w*)\n([\s\S]*?)```/g, (_, language, code) => {
+    const index = codeBlocks.push({ language: language || 'text', code: code.trimEnd() }) - 1
+    return `\n@@CODE_${index}@@\n`
+  })
+  const inline = value => escapeHtml(value)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  const output = []
+  let paragraph = []
+  const flush = () => { if (paragraph.length) { output.push(`<p>${paragraph.map(inline).join('<br />')}</p>`); paragraph = [] } }
+  for (const line of source.split(/\r?\n/)) {
+    const text = line.trim()
+    const code = text.match(/^@@CODE_(\d+)@@$/)
+    if (code) {
+      flush()
+      const block = codeBlocks[Number(code[1])]
+      output.push(`<div class="code-block"><div class="code-label">${escapeHtml(block.language)}</div><pre>${escapeHtml(block.code)}</pre></div>`)
+      continue
+    }
+    if (!text) { flush(); continue }
+    const heading = text.match(/^(#{2,4})\s+(.+)$/)
+    if (heading) {
+      flush()
+      const level = heading[1].length
+      const title = heading[2].replace(/[*_`]/g, '')
+      output.push(`<h${level}>${inline(title)}</h${level}>`)
+      continue
+    }
+    const item = text.match(/^[-*]\s+(.+)$/)
+    if (item) {
+      flush()
+      const previous = output[output.length - 1]
+      if (!previous || !previous.endsWith('</ul>')) output.push('<ul>')
+      output.push(`<li>${inline(item[1])}</li>`)
+      continue
+    }
+    paragraph.push(text)
+  }
+  flush()
+  const html = output.join('').replace(/(<ul>(?:<li>[\s\S]*?<\/li>)+)(?=<|$)/g, '$1</ul>')
+  return html
+}
+
+const showPreview = post => {
+  document.querySelector('.preview-overlay')?.remove()
+  const headings = [...String(post.content || '').matchAll(/^#{2,4}\s+(.+)$/gm)].map(match => match[1].replace(/[*_`]/g, ''))
+  const overlay = document.createElement('div')
+  overlay.className = 'preview-overlay'
+  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${escapeHtml(post.date)} · ${escapeHtml(post.category || '随笔')}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="/assets/cover.webp" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${escapeHtml(post.date)} · ${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
+  document.body.append(overlay)
+  overlay.querySelector('[data-preview-close]').addEventListener('click', () => overlay.remove())
+  overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove() })
+}
+
 const parseMarkdown = raw => {
   const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/)
   if (!match) return { ...blankPost(), content: raw }
@@ -189,7 +253,7 @@ const init = async () => {
   document.querySelector('#publishPost').addEventListener('click', publishCurrent)
   document.querySelector('#loginGithub').addEventListener('click', publishLogin)
   document.querySelector('#deletePost').addEventListener('click', () => { if (!state.active) return; state.posts = state.posts.filter(post => post.id !== state.active); const next = state.posts[0] || blankPost(); if (!state.posts.length) state.posts.push(next); state.active = next.id; fillForm(next); saveDrafts(); renderList(); showToast('草稿已删除') })
-  document.querySelector('#previewPost').addEventListener('click', () => { const current = readForm(); const preview = new Blob([toMarkdown(current)], { type: 'text/markdown;charset=utf-8' }); window.open(URL.createObjectURL(preview), '_blank') })
+  document.querySelector('#previewPost').addEventListener('click', () => { const current = readForm(); if (!current.title) { showToast('请先填写标题'); return }; showPreview(current) })
   document.querySelector('#exportAll').addEventListener('click', () => { const current = upsertCurrent(); if (current) download(`${current.slug}.md`, toMarkdown(current), 'text/markdown;charset=utf-8') })
   document.querySelector('#importMarkdown').addEventListener('click', () => document.querySelector('#markdownFile').click())
   document.querySelector('#markdownFile').addEventListener('change', async event => { const file = event.target.files[0]; if (!file) return; const post = parseMarkdown(await file.text()); post.id = `draft-${Date.now()}`; state.posts.unshift(post); state.active = post.id; fillForm(post); saveDrafts(); renderList(); showToast('Markdown 已导入本机') })

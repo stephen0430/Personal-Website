@@ -311,6 +311,19 @@ img { display: block; max-width: 100%; }
 .toast { position: fixed; right: 24px; bottom: 76px; z-index: 90; max-width: 340px; padding: 10px 14px; border-radius: 6px; color: #fff; background: #182e36; opacity: 0; pointer-events: none; transform: translateY(8px); transition: 180ms ease; }
 .toast.is-visible { opacity: 1; transform: translateY(0); }
 
+.preview-overlay { position: fixed; inset: 0; z-index: 100; overflow: auto; background: var(--paper); }
+.preview-toolbar { position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; width: min(100% - 32px, 1240px); margin: 16px auto 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow); backdrop-filter: blur(12px); font-size: 0.84rem; font-weight: 700; }
+.preview-page { padding-bottom: 70px; }
+.preview-hero { display: grid; place-items: center; min-height: 330px; margin-top: -54px; padding: 100px 24px 42px; color: #fff; background-color: #146a82; background-position: center 40%; background-size: cover; position: relative; text-align: center; }
+.preview-hero::before { position: absolute; inset: 0; content: ""; background: rgba(13, 102, 128, 0.76); }
+.preview-hero > div { position: relative; }
+.preview-hero h1 { margin: 12px 0 6px; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; }
+.preview-hero p { margin: 0; color: rgba(255,255,255,0.82); font-size: 0.82rem; }
+.preview-layout { display: grid; grid-template-columns: minmax(0, 820px) 250px; gap: 22px; width: min(100% - 32px, 1080px); margin: 34px auto 0; align-items: start; }
+.preview-layout .article-card { min-width: 0; }
+.preview-layout .toc-card { position: sticky; top: 86px; }
+@media (max-width: 850px) { .preview-layout { grid-template-columns: 1fr; } .preview-layout .toc-card { position: static; } }
+
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 6px; font-size: 0.82rem; font-weight: 700; }
 .button-primary { border-color: var(--accent); color: #fff; background: var(--accent); }
 .button-ghost { color: var(--ink); background: transparent; }
