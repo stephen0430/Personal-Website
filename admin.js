@@ -55,6 +55,19 @@ const checkAuth = async () => {
 }
 
 const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: new Date().toISOString().slice(0, 10), category: '随笔', tags: [], excerpt: '', content: '' })
+const authErrorMessage = reason => ({
+  oauth_denied: 'GitHub 拒绝了本次授权。请重新登录并完成授权。',
+  state_cookie_missing: '浏览器没有带回 OAuth 临时 Cookie。请确认登录和回调都使用 personal-website-8cn.pages.dev 域名。',
+  state_mismatch: 'OAuth state 校验失败。请重新登录；若仍失败，清除此站点 Cookie 后再试。',
+  authorization_code_missing: 'GitHub 没有返回授权码，请重新登录。',
+  oauth_config_missing: 'Cloudflare 缺少 GITHUB_CLIENT_ID、GITHUB_CLIENT_SECRET 或 GITHUB_CALLBACK_URL。',
+  session_secret_missing: 'Cloudflare 缺少 SESSION_SECRET，请添加 Secret 并重新部署。',
+  token_exchange_failed: 'GitHub 没有接受 Client Secret、回调地址或 PKCE 校验，请核对这些配置。',
+  github_profile_failed: '授权后读取 GitHub 账号失败，请检查 OAuth App 的 read:user 权限。',
+  github_account_not_allowed: '登录账号不在允许名单中；ALLOWED_GITHUB_LOGIN 应为 stephen0430。',
+  session_creation_failed: '创建登录会话失败，请检查 SESSION_SECRET。',
+  callback_internal_error: 'OAuth 回调内部错误，请查看 Cloudflare Pages Functions 日志。'
+}[reason] || '未识别的 OAuth 错误，请查看 Cloudflare Pages Functions 日志。')
 
 const readForm = () => ({
   ...state.posts.find(post => post.id === state.active),
@@ -177,7 +190,18 @@ const init = async () => {
   document.querySelector('#markdownFile').addEventListener('change', async event => { const file = event.target.files[0]; if (!file) return; const post = parseMarkdown(await file.text()); post.id = `draft-${Date.now()}`; state.posts.unshift(post); state.active = post.id; fillForm(post); saveDrafts(); renderList(); showToast('Markdown 已导入本机') })
   const params = new URLSearchParams(location.search)
   if (params.get('auth') === 'success') showToast('GitHub 登录成功')
-  if (params.get('auth') === 'error') showToast('GitHub 登录失败')
+  if (params.get('auth') === 'error') {
+    const reason = params.get('reason') || 'unknown'
+    const message = authErrorMessage(reason)
+    document.querySelector('#saveStatus').textContent = message
+    showToast(message)
+    console.error('GitHub OAuth failure category:', reason)
+  }
+  if (params.has('auth') || params.has('reason')) {
+    params.delete('auth')
+    params.delete('reason')
+    history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`)
+  }
   await checkAuth()
 }
 
