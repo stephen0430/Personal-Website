@@ -12,6 +12,11 @@ const toBase64 = value => {
   return btoa(binary)
 }
 
+const readApiResponse = async response => {
+  const raw = await response.text()
+  try { return { data: JSON.parse(raw || '{}'), raw } } catch { return { data: null, raw } }
+}
+
 export async function onRequestOptions({ request, env }) { return options(request, env) }
 export async function onRequestPost({ request, env }) {
   const session = await readSession(env, request)
@@ -23,13 +28,17 @@ export async function onRequestPost({ request, env }) {
     const filePath = `content/posts/${post.date}-${slug}.md`
     const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${session.accessToken}`, 'X-GitHub-Api-Version': '2022-11-28' }
     const existing = await fetch(`https://api.github.com/repos/${repository}/contents/${filePath}?ref=main`, { headers })
-    const existingJson = existing.ok ? await existing.json() : null
+    const existingPayload = await readApiResponse(existing)
+    const existingJson = existing.ok ? existingPayload.data : null
+    if (existing.ok && !existingJson) return withCors(request, env, json({ error: `GitHub returned non-JSON while checking the file: ${existingPayload.raw.slice(0, 240)}` }, 502))
     const response = await fetch(`https://api.github.com/repos/${repository}/contents/${filePath}`, {
       method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: `Publish post: ${cleanLine(post.title)}`, content: toBase64(markdownFor(post)), branch: 'main', ...(existingJson?.sha ? { sha: existingJson.sha } : {}) })
     })
-    const result = await response.json()
-    if (!response.ok) return withCors(request, env, json({ error: result.message || 'GitHub publish failed' }, response.status))
+    const payload = await readApiResponse(response)
+    const result = payload.data
+    if (!response.ok) return withCors(request, env, json({ error: result?.message || `GitHub publish failed (HTTP ${response.status}): ${payload.raw.slice(0, 240)}` }, response.status))
+    if (!result) return withCors(request, env, json({ error: `GitHub returned non-JSON after publishing: ${payload.raw.slice(0, 240)}` }, 502))
     return withCors(request, env, json({ ok: true, path: filePath, commit: result.commit?.html_url || '' }))
   } catch (error) {
     return withCors(request, env, json({ error: error.message || 'Publish failed' }, 500))

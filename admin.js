@@ -45,7 +45,9 @@ const checkAuth = async () => {
   document.querySelector('#publishPost').disabled = false
   try {
     const response = await fetch(`${apiBase()}/api/auth/me`, { credentials: 'include' })
-    const data = await response.json()
+    const raw = await response.text()
+    let data
+    try { data = JSON.parse(raw || '{}') } catch { throw new Error(`发布接口返回了非 JSON 响应（HTTP ${response.status}）：${raw.slice(0, 240)}`) }
     state.authenticated = Boolean(data.authenticated)
     document.querySelector('#loginGithub').textContent = state.authenticated ? `GitHub：${data.login}` : '登录 GitHub'
     return state.authenticated
