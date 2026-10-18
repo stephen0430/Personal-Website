@@ -8,7 +8,7 @@ export const parseMarkdownPost = (raw, fallbackDate) => {
     const title = heading?.[1]?.trim() || ''
     if (heading) lines.splice(firstContentLine, 1)
     return {
-      slug: '', title, titleEn: '', date: fallbackDate, updated: '', category: '随笔', categoryEn: '',
+      slug: '', title, titleEn: '', date: fallbackDate, updated: '', category: '', categoryEn: '',
       tags: [], tagsEn: [], cover: '', excerpt: '', excerptEn: '', content: lines.join('\n').trim()
     }
   }
@@ -25,7 +25,7 @@ export const parseMarkdownPost = (raw, fallbackDate) => {
     titleEn: meta.titleEn || '',
     date: meta.date || fallbackDate,
     updated: meta.updated || '',
-    category: meta.category || '随笔',
+    category: meta.category || '',
     categoryEn: meta.categoryEn || '',
     tags: parseTags(meta.tags),
     tagsEn: parseTags(meta.tagsEn),
