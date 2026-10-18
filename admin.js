@@ -85,6 +85,7 @@ const authErrorMessage = reason => ({
 }[reason] || '未识别的 OAuth 错误，请查看 Cloudflare Pages Functions 日志。')
 
 const postKey = post => post.sourcePath || `${post.date}-${post.slug}`
+const categoryNames = () => [...new Set([...state.publishedPosts, ...state.drafts].map(post => String(post.category || '').trim()).filter(Boolean))]
 const getActivePost = () => {
   if (!state.active) return null
   return state.active.kind === 'draft'
@@ -115,11 +116,13 @@ const fillForm = post => {
   document.querySelector('#postDate').disabled = isPublished
   document.querySelector('#postDateNote').textContent = isPublished ? '编辑线上文章时保留原发布日期。' : '发布日期用于首页排序和归档。'
   document.querySelector('#postCategory').value = post.category || '随笔'
+  document.querySelector('#categoryNote').textContent = `类别：${categoryNames().join('、') || '暂无'}`
   document.querySelector('#postTags').value = (post.tags || []).join(', ')
   document.querySelector('#postExcerpt').value = post.excerpt || ''
   document.querySelector('#postContent').value = post.content || ''
   document.querySelector('#savePost').textContent = isPublished ? '保存本地修改' : '保存草稿'
   document.querySelector('#publishPost').textContent = isPublished ? '发布更新' : '发布新文章'
+  document.querySelector('#importUpdateMarkdown').hidden = !isPublished
   document.querySelector('#deletePost').hidden = !isDraft
   document.querySelector('#deletePost').disabled = !isDraft
 }
@@ -285,7 +288,7 @@ const parseMarkdown = raw => {
   const meta = {}
   match[1].split(/\r?\n/).forEach(line => { const index = line.indexOf(':'); if (index >= 0) meta[line.slice(0, index).trim()] = line.slice(index + 1).trim() })
   const parseTags = value => (value || '').replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
-  return { ...blankPost(), slug: meta.slug || '', title: meta.title || '', titleEn: meta.titleEn || '', date: meta.date || shanghaiToday(), updated: meta.updated || '', category: meta.category || '随笔', categoryEn: meta.categoryEn || '', tags: parseTags(meta.tags), tagsEn: parseTags(meta.tagsEn), cover: meta.cover || '/assets/cover.webp', excerpt: meta.excerpt || '', excerptEn: meta.excerptEn || '', content: match[2].trim() }
+  return { ...blankPost(), slug: meta.slug || '', title: meta.title || '', titleEn: meta.titleEn || '', date: meta.date || shanghaiToday(), updated: meta.updated || '', category: meta.category || '随笔', categoryEn: meta.categoryEn || '', tags: parseTags(meta.tags), tagsEn: parseTags(meta.tagsEn), cover: meta.cover || '', excerpt: meta.excerpt || '', excerptEn: meta.excerptEn || '', content: match[2].trim() }
 }
 
 const normalizePublished = post => ({
@@ -366,6 +369,42 @@ const init = async () => {
     download(`${current.slug}.md`, toMarkdown(current), 'text/markdown;charset=utf-8')
   })
   document.querySelector('#importMarkdown').addEventListener('click', () => document.querySelector('#markdownFile').click())
+  document.querySelector('#importUpdateMarkdown').addEventListener('click', () => document.querySelector('#updateMarkdownFile').click())
+  document.querySelector('#updateMarkdownFile').addEventListener('change', async event => {
+    const file = event.target.files[0]
+    if (!file) return
+    try {
+      const current = getActivePost()
+      if (!current?.sourcePath) throw new Error('请先从“已发布”列表选择要更新的文章。')
+      const imported = parseMarkdown(await file.text())
+      if (!imported.title.trim() || !imported.content.trim()) throw new Error('Markdown 文件需要包含标题和正文。')
+      const updated = {
+        ...current,
+        ...imported,
+        id: state.active.kind === 'draft' ? current.id : `draft-${Date.now()}`,
+        slug: current.slug || imported.slug || slugify(imported.title),
+        sourcePath: current.sourcePath,
+        date: current.date,
+        updated: current.updated || current.date,
+        titleEn: imported.titleEn || current.titleEn || '',
+        categoryEn: imported.categoryEn || current.categoryEn || '',
+        tagsEn: imported.tagsEn?.length ? imported.tagsEn : current.tagsEn || [],
+        cover: imported.cover || current.cover || '/assets/cover.webp',
+        excerptEn: imported.excerptEn || current.excerptEn || ''
+      }
+      const index = state.drafts.findIndex(draft => draft.id === updated.id)
+      if (index >= 0) state.drafts[index] = updated
+      else state.drafts.unshift(updated)
+      state.active = { kind: 'draft', id: updated.id }
+      fillForm(updated); saveDrafts(); renderList()
+      document.querySelector('#saveStatus').textContent = 'Markdown 已导入本地；发布日期和文章链接保持不变。点击“发布更新”同步线上。'
+      showToast('Markdown 已导入为待发布更新')
+    } catch (error) {
+      showToast(error.message || 'Markdown 导入失败')
+    } finally {
+      event.target.value = ''
+    }
+  })
   document.querySelector('#markdownFile').addEventListener('change', async event => {
     const file = event.target.files[0]
     if (!file) return

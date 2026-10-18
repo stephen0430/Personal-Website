@@ -61,7 +61,7 @@
             <label>标题<input id="postTitle" type="text" placeholder="输入文章标题" /></label>
             <div class="form-row">
               <label>发布日期<input id="postDate" type="date" /><small id="postDateNote">新文章可设置发布日期。</small></label>
-              <label>分类<input id="postCategory" type="text" placeholder="例如：学习" /></label>
+              <label>分类<input id="postCategory" type="text" placeholder="例如：学习" /><small id="categoryNote">类别：随笔、生活记录、学习、项目复盘</small></label>
             </div>
             <label>标签<input id="postTags" type="text" placeholder="用逗号分隔，例如：AI, Python" /></label>
             <label>摘要<textarea id="postExcerpt" rows="2" placeholder="首页卡片摘要"></textarea></label>
@@ -69,8 +69,10 @@
           </div>
           <div class="editor-footer">
             <span id="saveStatus">本地草稿不会自动上传到 GitHub。</span>
+            <button class="button button-ghost" id="importUpdateMarkdown" type="button" hidden>导入 Markdown 文件</button>
             <button class="button button-ghost" id="loginGithub" type="button">登录 GitHub</button>
             <button class="button button-danger" id="deletePost" type="button" hidden>删除草稿</button>
+            <input id="updateMarkdownFile" type="file" accept=".md,.markdown,text/markdown" hidden />
           </div>
         </section>
       </section>
@@ -90,6 +92,6 @@
       </section>
     </main>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="admin.js?v=published-edit-1"></script>
+    <script type="module" src="admin.js?v=published-edit-2"></script>
   </body>
 </html>
