@@ -1,3 +1,5 @@
+import { parseMarkdownPost } from './admin-markdown.js'
+
 const STORAGE_KEY = 'qxy-drafts'
 const html = document.documentElement
 const toast = document.querySelector('#toast')
@@ -282,14 +284,7 @@ const showPreview = post => {
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove() })
 }
 
-const parseMarkdown = raw => {
-  const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/)
-  if (!match) return { ...blankPost(), content: raw }
-  const meta = {}
-  match[1].split(/\r?\n/).forEach(line => { const index = line.indexOf(':'); if (index >= 0) meta[line.slice(0, index).trim()] = line.slice(index + 1).trim() })
-  const parseTags = value => (value || '').replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
-  return { ...blankPost(), slug: meta.slug || '', title: meta.title || '', titleEn: meta.titleEn || '', date: meta.date || shanghaiToday(), updated: meta.updated || '', category: meta.category || '随笔', categoryEn: meta.categoryEn || '', tags: parseTags(meta.tags), tagsEn: parseTags(meta.tagsEn), cover: meta.cover || '', excerpt: meta.excerpt || '', excerptEn: meta.excerptEn || '', content: match[2].trim() }
-}
+const parseMarkdown = raw => ({ ...blankPost(), ...parseMarkdownPost(raw, shanghaiToday()) })
 
 const normalizePublished = post => ({
   ...post,
