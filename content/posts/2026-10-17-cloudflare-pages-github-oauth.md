@@ -1,13 +1,17 @@
 ---
-title: Cloudflare Pages + GitHub OAuth
+title: Cloudflare Pages + GitHub OAuth 安全发布配置手册
+titleEn: 
 date: 2026-10-17
+updated: 2026-10-18
 category: 随笔
+categoryEn: 
 tags: [个人网站建立]
+tagsEn: []
 cover: /assets/cover.webp
-excerpt: 
+excerpt: 记录 QXY Web 从 Cloudflare Pages 部署，到 GitHub OAuth 登录，再到管理台发布文章的完整配置流程。
+excerptEn: 
+slug: cloudflare-pages-github-oauth
 ---
-
-# QXY Web：Cloudflare Pages + GitHub OAuth 安全发布配置手册
 
 这份文档记录 QXY Web 从 Cloudflare Pages 部署，到 GitHub OAuth 登录，再到管理台发布文章的完整配置流程。
 
@@ -16,7 +20,6 @@ excerpt:
 ```text
 GitHub 仓库：stephen0430/Personal-Website
 公开网站：GitHub Pages 或 Cloudflare Pages
-管理台：Cloudflare Pages 的 /admin.html
 后端：Cloudflare Pages Functions
 文章发布目标：GitHub 仓库 main 分支的 content/posts/
 ```
@@ -82,19 +85,21 @@ Personal-Website/
 ```text
 GitHub 用户名：stephen0430
 GitHub 仓库：stephen0430/Personal-Website
-Cloudflare Pages 域名：personal-website-8cn.pages.dev
+Cloudflare Pages 域名：qxy0430.pages.dev
 ```
 
 当前实际使用的管理台地址：
 
 ```text
-https://personal-website-8cn.pages.dev/admin.html
+https://qxy0430.pages.dev/admin
 ```
+
+OAuth 登录成功后的内部返回页面配置为 `https://qxy0430.pages.dev/admin.html`。
 
 当前实际 OAuth 回调地址：
 
 ```text
-https://personal-website-8cn.pages.dev/api/auth/callback
+https://qxy0430.pages.dev/api/auth/callback
 ```
 
 ## 3. 创建 Cloudflare Pages 项目
@@ -164,7 +169,7 @@ Begin setup
 
 ```text
 Project name:
-personal-website
+qxy0430
 
 Production branch:
 main
@@ -233,10 +238,10 @@ Cloudflare 文档也说明，Pages Functions 应通过 Pages 项目和 `function
 
 ### 3.6 记录 Pages 域名
 
-当前项目域名为：
+当前 Pages 项目名为 `qxy0430`，项目域名为：
 
 ```text
-https://personal-website-8cn.pages.dev
+https://qxy0430.pages.dev
 ```
 
 后续所有地址都基于这个域名。
@@ -268,19 +273,19 @@ Application name:
 QXY Web Admin
 
 Homepage URL:
-https://personal-website-8cn.pages.dev/
+https://qxy0430.pages.dev/
 
 Application description:
 Private publishing console for QXY Web
 
 Authorization callback URL:
-https://personal-website-8cn.pages.dev/api/auth/callback
+https://qxy0430.pages.dev/api/auth/callback
 ```
 
 回调地址必须完全匹配，不能写成：
 
 ```text
-https://personal-website-8cn.pages.dev/
+https://qxy0430.pages.dev/
 ```
 
 也不能写成：
@@ -300,7 +305,7 @@ https://stephen0430.github.io/Personal-Website/api/auth/callback
 GitHub OAuth App 页面中的 Redirect URI 应该是：
 
 ```text
-https://personal-website-8cn.pages.dev/api/auth/callback
+https://qxy0430.pages.dev/api/auth/callback
 ```
 
 如果页面有：
@@ -361,7 +366,7 @@ public_repo read:user
 ```text
 Cloudflare Dashboard
 → Workers & Pages
-→ personal-website
+→ qxy0430
 → Settings
 → Variables and Secrets
 ```
@@ -413,7 +418,7 @@ Name:
 GITHUB_CALLBACK_URL
 
 Value:
-https://personal-website-8cn.pages.dev/api/auth/callback
+https://qxy0430.pages.dev/api/auth/callback
 ```
 
 #### ALLOWED_GITHUB_LOGIN
@@ -433,7 +438,7 @@ Name:
 ADMIN_ORIGIN
 
 Value:
-https://personal-website-8cn.pages.dev
+https://qxy0430.pages.dev
 ```
 
 最后不要加 `/`。
@@ -445,7 +450,7 @@ Name:
 ADMIN_RETURN_URL
 
 Value:
-https://personal-website-8cn.pages.dev/admin.html
+https://qxy0430.pages.dev/admin.html
 ```
 
 ### 5.3 添加 Secret：GITHUB_CLIENT_SECRET
@@ -546,13 +551,13 @@ Retry build
 当前 `content/site.json` 应该使用：
 
 ```json
-"publicationApi": "https://personal-website-8cn.pages.dev"
+"publicationApi": "https://qxy0430.pages.dev"
 ```
 
 不要填写：
 
 ```text
-https://personal-website-8cn.pages.dev/api
+https://qxy0430.pages.dev/api
 ```
 
 也不要填写：
@@ -574,7 +579,7 @@ https://YOUR-CLOUDFLARE-PAGES.pages.dev
 打开：
 
 ```text
-https://personal-website-8cn.pages.dev/admin.html
+https://qxy0430.pages.dev/admin
 ```
 
 点击：
@@ -616,12 +621,12 @@ GitHub：stephen0430
 2026-10-17
 ```
 
-4. 填写分类。
-5. 填写标签，多个标签用英文逗号分隔。
-6. 填写摘要。
-7. 写 Markdown 正文。
-8. 点击 `保存草稿`。
-9. 点击 `发布到网站`。
+1. 填写分类。
+2. 填写标签，多个标签用英文逗号分隔。
+3. 填写摘要。
+4. 写 Markdown 正文。
+5. 点击 `保存草稿`。
+6. 点击 `发布到网站`。
 
 发布成功后，GitHub 仓库中会新增：
 
@@ -707,12 +712,12 @@ GITHUB_CALLBACK_URL
 - Client Secret 错误；
 - `SESSION_SECRET` 缺失；
 - `ALLOWED_GITHUB_LOGIN` 不是 `stephen0430`；
-- 管理台不是从 `personal-website-8cn.pages.dev` 打开的。
+- 管理台不是从 `qxy0430.pages.dev` 打开的。
 
 正确回调地址必须是：
 
 ```text
-https://personal-website-8cn.pages.dev/api/auth/callback
+https://qxy0430.pages.dev/api/auth/callback
 ```
 
 ### 问题四：显示 OAuth 回调内部错误
@@ -731,7 +736,7 @@ session_secret_missing
 
 ```text
 Workers & Pages
-→ personal-website
+→ qxy0430
 → Logs / Functions logs
 ```
 
@@ -748,7 +753,7 @@ https://stephen0430.github.io/Personal-Website/admin.html
 发布时应使用 Cloudflare 同源管理台：
 
 ```text
-https://personal-website-8cn.pages.dev/admin.html
+https://qxy0430.pages.dev/admin
 ```
 
 这样管理台、OAuth 回调和 Functions API 都在同一个域名下，登录 Cookie 更稳定。
@@ -808,6 +813,8 @@ ALLOWED_GITHUB_LOGIN
 - [ ] 使用 Cloudflare 管理台登录
 - [ ] GitHub 登录成功
 - [ ] 发布测试文章成功
+
+
 - [ ] GitHub `content/posts/` 出现新 Markdown 文件
 - [ ] Actions 构建成功
 - [ ] 网站首页出现新文章
