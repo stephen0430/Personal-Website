@@ -21,7 +21,7 @@ const dictionary = {
     'search.title': '搜索文章', 'search.placeholder': '输入标题、标签或关键词', 'home.latest': '最近更新',
     'home.latestDesc': '把正在学习的东西，认真留下来。', 'home.all': '查看全部', 'home.archive': '时间轴',
     'home.profile': '关于我', 'home.categories': '分类', 'home.tags': '常用标签', 'home.archivePanel': '归档', 'home.stats': '网站信息',
-    'home.posts': '文章', 'home.words': '总字数', 'home.views': '访问量', 'home.rss': 'RSS', 'home.sitemap': '站点地图', 'home.admin': '管理台', 'home.subscribe': '订阅', 'home.view': '查看', 'home.manage': '管理', 'article.back': '返回首页', 'post.published': '发表于：', 'post.updated': '更新于：',
+    'home.posts': '文章', 'home.words': '总字数', 'home.views': '访问量', 'home.rss': 'RSS', 'home.sitemap': '站点地图', 'home.admin': '管理台', 'home.subscribe': '订阅', 'home.view': '查看', 'home.manage': '管理', 'article.back': '返回首页', 'post.published': '发表于', 'post.updated': '更新于：',
     'article.comments': '评论', 'article.commentsHint': '评论区已预留，配置 Giscus 后即可启用。',
     'article.toc': '目录', 'article.copy': '复制', 'article.copied': '已复制', 'about.title': '关于 QXY Web',
     'about.label': 'ABOUT', 'friends.title': '友链', 'archive.title': '时间轴', 'categories.title': '分类',
@@ -125,6 +125,7 @@ const renderMarkdown = markdown => {
 }
 
 const formatDate = date => new Intl.DateTimeFormat(state.lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`))
+const renderPublishedDate = post => `<div class="post-date-meta post-published-date"><span><strong>${t('post.published')}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span></div>`
 const renderPostDates = post => `<div class="post-date-meta"><span><strong>${t('post.published')}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span><span><strong>${t('post.updated')}</strong><time datetime="${escapeHtml(post.updated || post.date)}">${formatDate(post.updated || post.date)}</time></span></div>`
 const wordCount = post => post.content.replace(/[`#>*_\-\[\]()]/g, '').replace(/\s/g, '').length
 const sortedPosts = () => [...state.posts].sort((a, b) => b.date.localeCompare(a.date))
@@ -203,7 +204,7 @@ const renderSidebar = () => {
 
 const renderPostCard = post => `<article class="post-card">
   <a class="post-cover" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(localized(post, 'title') || post.title)}" loading="lazy" /></a>
-  <div class="post-info">${renderPostDates(post)}<div class="post-meta"><a href="#category/${encodeURIComponent(post.category)}">${escapeHtml(localized(post, 'category') || post.category)}</a></div><h3><a href="#post/${encodeURIComponent(post.slug)}">${escapeHtml(localized(post, 'title') || post.title)}</a></h3><p>${escapeHtml(localized(post, 'excerpt') || post.excerpt)}</p><div class="post-tags">${post.tags.map(tag => `<a class="tag-chip" href="#tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join('')}</div></div>
+  <div class="post-info"><h3><a href="#post/${encodeURIComponent(post.slug)}">${escapeHtml(localized(post, 'title') || post.title)}</a></h3><p>${escapeHtml(localized(post, 'excerpt') || post.excerpt)}</p>${renderPublishedDate(post)}<div class="post-tags">${post.tags.map(tag => `<a class="tag-chip" href="#tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join('')}</div></div>
 </article>`
 
 const renderHome = () => `${renderHero()}<section class="page-section" id="latest"><div class="section-heading"><div><span class="eyebrow">QXY NOTES</span><h2>${t('home.latest')}</h2></div><div><p>${t('home.latestDesc')}</p><a class="section-link" href="#archive">${t('home.all')} →</a></div></div><div class="home-layout"><div class="post-grid">${recentlyUpdatedPosts().map(renderPostCard).join('')}</div>${renderSidebar()}</div></section>`
