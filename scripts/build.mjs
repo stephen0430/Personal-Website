@@ -38,6 +38,12 @@ const parseMarkdown = raw => {
   }
 }
 
+const shanghaiDate = value => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(value)
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
 const site = JSON.parse(await fs.readFile(sitePath, 'utf8'))
 const files = (await fs.readdir(postsDir)).filter(file => file.endsWith('.md')).sort().reverse()
 const posts = []
@@ -50,6 +56,8 @@ for (const file of files) {
     title: post.title,
     titleEn: post.titleEn || '',
     date: post.date,
+    updated: post.updated || post.date,
+    sourcePath: `content/posts/${file}`,
     category: post.category || '随笔',
     categoryEn: post.categoryEn || '',
     tags: Array.isArray(post.tags) ? post.tags : [post.tags].filter(Boolean),
@@ -65,8 +73,8 @@ await fs.writeFile(postsOut, `${JSON.stringify(posts, null, 2)}\n`, 'utf8')
 
 const origin = site.baseUrl || 'https://YOUR-USERNAME.github.io/YOUR-REPO'
 const urls = ['', ...posts.map(post => `?post=${encodeURIComponent(post.slug)}`)]
-const lastmod = new Date().toISOString().slice(0, 10)
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(url => `  <url><loc>${escapeXml(`${origin}/${url}`)}</loc><lastmod>${lastmod}</lastmod></url>`).join('\n')}\n</urlset>\n`
+const lastmod = shanghaiDate(new Date())
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url, index) => `  <url><loc>${escapeXml(`${origin}/${url}`)}</loc><lastmod>${index === 0 ? lastmod : escapeXml(posts[index - 1].updated || posts[index - 1].date)}</lastmod></url>`).join('\n')}\n</urlset>\n`
 const rssItems = posts.map(post => `  <item>\n    <title>${escapeXml(post.title)}</title>\n    <link>${escapeXml(`${origin}/?post=${encodeURIComponent(post.slug)}`)}</link>\n    <guid>${escapeXml(`${origin}/?post=${encodeURIComponent(post.slug)}`)}</guid>\n    <pubDate>${new Date(`${post.date}T00:00:00Z`).toUTCString()}</pubDate>\n    <description>${escapeXml(post.excerpt)}</description>\n  </item>`).join('\n')
 const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>${escapeXml(site.name)}</title><link>${origin}</link><description>${escapeXml(site.subtitle)}</description>\n${rssItems}\n</channel></rss>\n`
 

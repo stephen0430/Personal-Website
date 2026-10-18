@@ -5,6 +5,8 @@
     "title": "Cloudflare Pages + GitHub OAuth",
     "titleEn": "",
     "date": "2026-10-17",
+    "updated": "2026-10-17",
+    "sourcePath": "content/posts/2026-10-17-cloudflare-pages-github-oauth.md",
     "category": "随笔",
     "categoryEn": "",
     "tags": [
@@ -22,6 +24,8 @@
     "title": "QXY Web，先从这里开始",
     "titleEn": "QXY Web, Start Here",
     "date": "2026-10-15",
+    "updated": "2026-10-15",
+    "sourcePath": "content/posts/2026-10-15-welcome.md",
     "category": "生活记录",
     "categoryEn": "Life",
     "tags": [
@@ -43,6 +47,8 @@
     "title": "机器视觉学习笔记：先把问题说清楚",
     "titleEn": "Computer Vision Notes: Define the Problem First",
     "date": "2026-10-14",
+    "updated": "2026-10-14",
+    "sourcePath": "content/posts/2026-10-14-vision-notes.md",
     "category": "学习",
     "categoryEn": "Learning",
     "tags": [
@@ -66,6 +72,8 @@
     "title": "项目复盘应该留下什么",
     "titleEn": "What a Project Review Should Keep",
     "date": "2026-10-13",
+    "updated": "2026-10-13",
+    "sourcePath": "content/posts/2026-10-13-project-review-template.md",
     "category": "项目复盘",
     "categoryEn": "Project Review",
     "tags": [

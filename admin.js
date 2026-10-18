@@ -1,7 +1,13 @@
 const STORAGE_KEY = 'qxy-drafts'
 const html = document.documentElement
 const toast = document.querySelector('#toast')
-const state = { posts: [], active: null, theme: localStorage.getItem('qxy-theme') || 'light', site: null, authenticated: false }
+const state = { publishedPosts: [], drafts: [], active: null, theme: localStorage.getItem('qxy-theme') || 'light', site: null, authenticated: false }
+
+const shanghaiToday = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
 
 const showToast = message => {
   toast.textContent = message
@@ -17,7 +23,7 @@ const setTheme = theme => {
   document.querySelector('#adminTheme').textContent = theme === 'dark' ? '☼' : '☾'
 }
 
-const saveDrafts = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state.posts))
+const saveDrafts = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state.drafts))
 const slugify = title => title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `post-${Date.now()}`
 const apiBase = () => {
   const configured = String(state.site?.publicationApi || '').replace(/\/$/, '')
@@ -56,10 +62,14 @@ const checkAuth = async () => {
   }
 }
 
-const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: new Date().toISOString().slice(0, 10), category: '随笔', tags: [], excerpt: '', content: '' })
+const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: shanghaiToday(), updated: '', category: '随笔', tags: [], excerpt: '', content: '' })
+const previewDate = date => {
+  const [year, month, day] = String(date || '').split('-')
+  return year && month && day ? `${year}年${Number(month)}月${Number(day)}日` : ''
+}
 const authErrorMessage = reason => ({
   oauth_denied: 'GitHub 拒绝了本次授权。请重新登录并完成授权。',
-  state_cookie_missing: '浏览器没有带回 OAuth 临时 Cookie。请确认登录和回调都使用 personal-website-8cn.pages.dev 域名。',
+  state_cookie_missing: '浏览器没有带回 OAuth 临时 Cookie。请确认登录和回调都使用 qxy0430.pages.dev 域名。',
   state_mismatch: 'OAuth state 校验失败。请重新登录；若仍失败，清除此站点 Cookie 后再试。',
   authorization_code_missing: 'GitHub 没有返回授权码，请重新登录。',
   oauth_config_missing: 'Cloudflare 缺少 GITHUB_CLIENT_ID、GITHUB_CLIENT_SECRET 或 GITHUB_CALLBACK_URL。',
@@ -74,54 +84,91 @@ const authErrorMessage = reason => ({
   callback_internal_error: 'OAuth 回调内部错误，请查看 Cloudflare Pages Functions 日志。'
 }[reason] || '未识别的 OAuth 错误，请查看 Cloudflare Pages Functions 日志。')
 
-const readForm = () => ({
-  ...state.posts.find(post => post.id === state.active),
-  title: document.querySelector('#postTitle').value.trim(),
-  date: document.querySelector('#postDate').value,
-  category: document.querySelector('#postCategory').value.trim() || '随笔',
-  tags: document.querySelector('#postTags').value.split(',').map(item => item.trim()).filter(Boolean),
-  excerpt: document.querySelector('#postExcerpt').value.trim(),
-  content: document.querySelector('#postContent').value
-})
+const postKey = post => post.sourcePath || `${post.date}-${post.slug}`
+const getActivePost = () => {
+  if (!state.active) return null
+  return state.active.kind === 'draft'
+    ? state.drafts.find(post => post.id === state.active.id) || null
+    : state.publishedPosts.find(post => postKey(post) === state.active.key) || null
+}
+const findDraftFor = post => state.drafts.find(draft => draft.sourcePath && draft.sourcePath === post.sourcePath)
+
+const readForm = () => {
+  const base = getActivePost() || blankPost()
+  return {
+    ...base,
+    title: document.querySelector('#postTitle').value.trim(),
+    date: base.sourcePath ? base.date : document.querySelector('#postDate').value,
+    category: document.querySelector('#postCategory').value.trim() || '随笔',
+    tags: document.querySelector('#postTags').value.split(',').map(item => item.trim()).filter(Boolean),
+    excerpt: document.querySelector('#postExcerpt').value.trim(),
+    content: document.querySelector('#postContent').value
+  }
+}
 
 const fillForm = post => {
-  document.querySelector('#editorTitle').textContent = post.title || '新文章'
+  const isDraft = state.active?.kind === 'draft'
+  const isPublished = Boolean(post.sourcePath)
+  document.querySelector('#editorTitle').textContent = `${post.title || '新文章'} · ${isPublished ? (isDraft ? '修改草稿' : '已发布') : '本地草稿'}`
   document.querySelector('#postTitle').value = post.title || ''
-  document.querySelector('#postDate').value = post.date || new Date().toISOString().slice(0, 10)
+  document.querySelector('#postDate').value = post.date || shanghaiToday()
+  document.querySelector('#postDate').disabled = isPublished
+  document.querySelector('#postDateNote').textContent = isPublished ? '编辑线上文章时保留原发布日期。' : '发布日期用于首页排序和归档。'
   document.querySelector('#postCategory').value = post.category || '随笔'
   document.querySelector('#postTags').value = (post.tags || []).join(', ')
   document.querySelector('#postExcerpt').value = post.excerpt || ''
   document.querySelector('#postContent').value = post.content || ''
+  document.querySelector('#savePost').textContent = isPublished ? '保存本地修改' : '保存草稿'
+  document.querySelector('#publishPost').textContent = isPublished ? '发布更新' : '发布新文章'
+  document.querySelector('#deletePost').hidden = !isDraft
+  document.querySelector('#deletePost').disabled = !isDraft
 }
 
 const renderList = () => {
-  const list = document.querySelector('#adminPostList')
-  list.innerHTML = state.posts.length ? state.posts.map(post => `<button class="admin-post-item ${post.id === state.active ? 'is-active' : ''}" data-post-id="${post.id}" type="button"><strong>${post.title || '未命名文章'}</strong><small>${post.date || '未设置日期'} · ${post.category || '随笔'}</small></button>`).join('') : '<span class="muted">还没有本地草稿</span>'
-  list.querySelectorAll('[data-post-id]').forEach(button => button.addEventListener('click', () => selectPost(button.dataset.postId)))
+  const publishedList = document.querySelector('#publishedPostList')
+  const draftList = document.querySelector('#draftPostList')
+  publishedList.innerHTML = state.publishedPosts.length ? state.publishedPosts.map((post, index) => {
+    const key = postKey(post)
+    const draft = findDraftFor(post)
+    const active = state.active?.kind === 'published' && state.active.key === key
+    return `<button class="admin-post-item ${active ? 'is-active' : ''}" data-published-index="${index}" type="button"><strong>${escapeHtml(post.title || '未命名文章')}</strong><small>${escapeHtml(post.date || '未设置日期')} · ${escapeHtml(post.category || '随笔')}</small>${draft ? '<span class="admin-post-status">有未发布修改</span>' : ''}</button>`
+  }).join('') : '<span class="muted">暂无线上文章</span>'
+  draftList.innerHTML = state.drafts.length ? state.drafts.map((post, index) => {
+    const active = state.active?.kind === 'draft' && state.active.id === post.id
+    return `<button class="admin-post-item ${active ? 'is-active' : ''}" data-draft-index="${index}" type="button"><strong>${escapeHtml(post.title || '未命名文章')}</strong><small>${escapeHtml(post.date || '未设置日期')} · ${escapeHtml(post.category || '随笔')}</small><span class="admin-post-status">${post.sourcePath ? '待发布更新' : '新文章草稿'}</span></button>`
+  }).join('') : '<span class="muted">暂无本地草稿</span>'
+  publishedList.querySelectorAll('[data-published-index]').forEach(button => button.addEventListener('click', () => {
+    const post = state.publishedPosts[Number(button.dataset.publishedIndex)]
+    const draft = findDraftFor(post)
+    selectPost(draft ? 'draft' : 'published', draft ? draft.id : postKey(post))
+  }))
+  draftList.querySelectorAll('[data-draft-index]').forEach(button => button.addEventListener('click', () => selectPost('draft', state.drafts[Number(button.dataset.draftIndex)].id)))
 }
 
-const selectPost = id => {
-  state.active = id
-  fillForm(state.posts.find(post => post.id === id) || blankPost())
+const selectPost = (kind, id) => {
+  state.active = kind === 'draft' ? { kind, id } : { kind, key: id }
+  fillForm(getActivePost() || blankPost())
   renderList()
 }
 
-const upsertCurrent = () => {
+const saveDraft = () => {
   const current = readForm()
   if (!current.title) { showToast('请先填写标题'); return null }
+  if (!current.date) { showToast('请设置发布日期'); return null }
   current.slug = current.slug || slugify(current.title)
-  const index = state.posts.findIndex(post => post.id === state.active)
-  if (index >= 0) state.posts[index] = current
-  else state.posts.unshift(current)
-  state.active = current.id
+  current.id = state.active?.kind === 'draft' ? state.active.id : `draft-${Date.now()}`
+  const index = state.drafts.findIndex(post => post.id === current.id)
+  if (index >= 0) state.drafts[index] = current
+  else state.drafts.unshift(current)
+  state.active = { kind: 'draft', id: current.id }
   saveDrafts(); renderList(); fillForm(current)
-  document.querySelector('#saveStatus').textContent = `已保存到本机：${new Date().toLocaleTimeString()}`
-  showToast('草稿已保存')
+  document.querySelector('#saveStatus').textContent = `已保存到当前浏览器：${new Date().toLocaleTimeString()}`
+  showToast(current.sourcePath ? '修改已保存为本地草稿' : '草稿已保存到本机')
   return current
 }
 
 const publishCurrent = async () => {
-  const current = upsertCurrent()
+  const current = saveDraft()
   if (!current) return
   if (!isApiConfigured()) {
     showToast('还没有配置发布后端，请先部署 Cloudflare Pages')
@@ -133,7 +180,7 @@ const publishCurrent = async () => {
   }
   const button = document.querySelector('#publishPost')
   button.disabled = true
-  button.textContent = '发布中…'
+  button.textContent = current.sourcePath ? '更新中…' : '发布中…'
   document.querySelector('#saveStatus').textContent = '正在提交到 GitHub…'
   try {
     const response = await fetch(`${apiBase()}/api/publish`, {
@@ -142,14 +189,20 @@ const publishCurrent = async () => {
     })
     const data = await response.json()
     if (!response.ok) throw new Error(data.error || '发布失败')
-    document.querySelector('#saveStatus').textContent = `已提交到 GitHub：${data.path}`
-    showToast('发布成功，网站会自动部署')
+    const published = { ...current, sourcePath: data.path, date: data.date || current.date, updated: data.updated || current.date }
+    state.publishedPosts = [published, ...state.publishedPosts.filter(post => post.sourcePath !== data.path)]
+    state.drafts = state.drafts.filter(post => post.id !== current.id)
+    state.active = { kind: 'published', key: data.path }
+    saveDrafts(); renderList(); fillForm(published)
+    document.querySelector('#saveStatus').textContent = `已提交到 GitHub：${data.path}，Cloudflare 正在部署。`
+    showToast(current.sourcePath ? '更新已提交，网站正在部署' : '文章已提交，网站正在部署')
   } catch (error) {
     document.querySelector('#saveStatus').textContent = error.message
     showToast(error.message)
   } finally {
     button.disabled = false
-    button.textContent = '发布到网站'
+    const active = getActivePost()
+    button.textContent = active?.sourcePath ? '发布更新' : '发布新文章'
   }
 }
 
@@ -159,7 +212,7 @@ const download = (filename, content, type = 'text/plain;charset=utf-8') => {
   link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href)
 }
 
-const toMarkdown = post => `---\ntitle: ${post.title}\ndate: ${post.date}\ncategory: ${post.category}\ntags: [${post.tags.join(', ')}]\ncover: /assets/cover.webp\nexcerpt: ${post.excerpt}\n---\n\n${post.content.trim()}\n`
+const toMarkdown = post => `---\ntitle: ${post.title}\ntitleEn: ${post.titleEn || ''}\ndate: ${post.date}\nupdated: ${post.updated || post.date}\ncategory: ${post.category}\ncategoryEn: ${post.categoryEn || ''}\ntags: [${(post.tags || []).join(', ')}]\ntagsEn: [${(post.tagsEn || []).join(', ')}]\ncover: ${post.cover || '/assets/cover.webp'}\nexcerpt: ${post.excerpt || ''}\nexcerptEn: ${post.excerptEn || ''}\nslug: ${post.slug || ''}\n---\n\n${String(post.content || '').trim()}\n`
 
 const escapeHtml = value => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -219,7 +272,8 @@ const showPreview = post => {
   const headings = [...String(post.content || '').matchAll(/^#{2,4}\s+(.+)$/gm)].map(match => match[1].replace(/[*_`]/g, ''))
   const overlay = document.createElement('div')
   overlay.className = 'preview-overlay'
-  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${escapeHtml(post.date)} · ${escapeHtml(post.category || '随笔')}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="/assets/cover.webp" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${escapeHtml(post.date)} · ${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
+  const updated = post.updated || post.date
+  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>发表于：${escapeHtml(previewDate(post.date))} · 更新于：${escapeHtml(previewDate(updated))}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="/assets/cover.webp" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
   document.body.append(overlay)
   overlay.querySelector('[data-preview-close]').addEventListener('click', () => overlay.remove())
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove() })
@@ -230,33 +284,97 @@ const parseMarkdown = raw => {
   if (!match) return { ...blankPost(), content: raw }
   const meta = {}
   match[1].split(/\r?\n/).forEach(line => { const index = line.indexOf(':'); if (index >= 0) meta[line.slice(0, index).trim()] = line.slice(index + 1).trim() })
-  const tags = (meta.tags || '').replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
-  return { ...blankPost(), title: meta.title || '', date: meta.date || new Date().toISOString().slice(0, 10), category: meta.category || '随笔', tags, excerpt: meta.excerpt || '', content: match[2].trim() }
+  const parseTags = value => (value || '').replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
+  return { ...blankPost(), slug: meta.slug || '', title: meta.title || '', titleEn: meta.titleEn || '', date: meta.date || shanghaiToday(), updated: meta.updated || '', category: meta.category || '随笔', categoryEn: meta.categoryEn || '', tags: parseTags(meta.tags), tagsEn: parseTags(meta.tagsEn), cover: meta.cover || '/assets/cover.webp', excerpt: meta.excerpt || '', excerptEn: meta.excerptEn || '', content: match[2].trim() }
+}
+
+const normalizePublished = post => ({
+  ...post,
+  slug: post.slug || post.id,
+  sourcePath: post.sourcePath || `content/posts/${post.date}-${post.slug || post.id}.md`,
+  updated: post.updated || post.date,
+  tags: Array.isArray(post.tags) ? post.tags : []
+})
+
+const samePostContent = (left, right) => ['title', 'date', 'category', 'excerpt', 'content'].every(key => (left[key] || '') === (right[key] || ''))
+  && JSON.stringify(left.tags || []) === JSON.stringify(right.tags || [])
+
+const restoreDrafts = stored => {
+  if (!Array.isArray(stored)) return []
+  const drafts = []
+  stored.forEach((saved, index) => {
+    if (!saved || typeof saved !== 'object') return
+    const exact = state.publishedPosts.find(post => saved.sourcePath && saved.sourcePath === post.sourcePath)
+    const slugMatches = saved.slug ? state.publishedPosts.filter(post => saved.slug === post.slug) : []
+    const published = exact || slugMatches.find(post => saved.date === post.date) || (slugMatches.length === 1 ? slugMatches[0] : null)
+    const draft = { ...saved }
+    if (published) {
+      draft.sourcePath = published.sourcePath
+      draft.date = published.date
+    }
+    if (published && samePostContent(draft, published)) return
+    if (!String(draft.id || '').startsWith('draft-')) draft.id = `draft-${Date.now()}-${index}`
+    if (!draft.id) draft.id = `draft-${Date.now()}-${index}`
+    drafts.push(draft)
+  })
+  return drafts
 }
 
 const init = async () => {
   setTheme(state.theme)
   try { state.site = await (await fetch('content/site.json')).json() } catch { state.site = {} }
-  const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-  if (Array.isArray(stored) && stored.length) state.posts = stored
+  try {
+    const response = await fetch('content/posts.json', { cache: 'no-store' })
+    if (response.ok) state.publishedPosts = (await response.json()).map(normalizePublished)
+  } catch { state.publishedPosts = [] }
+  let stored = null
+  try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') } catch { stored = null }
+  state.drafts = restoreDrafts(stored)
+  if (state.drafts.length) selectPost('draft', state.drafts[0].id)
+  else if (state.publishedPosts.length) selectPost('published', postKey(state.publishedPosts[0]))
   else {
-    try { state.posts = await (await fetch('content/posts.json')).json() } catch { state.posts = [] }
+    const post = blankPost()
+    state.drafts.push(post)
+    state.active = { kind: 'draft', id: post.id }
+    fillForm(post); renderList()
   }
-  const first = state.posts[0] || blankPost()
-  if (!state.posts.length) state.posts.push(first)
-  state.active = first.id
-  fillForm(first); renderList()
 
   document.querySelector('#adminTheme').addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'))
-  document.querySelector('#newPost').addEventListener('click', () => { const post = blankPost(); state.posts.unshift(post); state.active = post.id; fillForm(post); renderList() })
-  document.querySelector('#savePost').addEventListener('click', upsertCurrent)
+  document.querySelector('#newPost').addEventListener('click', () => {
+    const post = blankPost()
+    state.drafts.unshift(post)
+    state.active = { kind: 'draft', id: post.id }
+    saveDrafts(); fillForm(post); renderList()
+  })
+  document.querySelector('#savePost').addEventListener('click', saveDraft)
   document.querySelector('#publishPost').addEventListener('click', publishCurrent)
   document.querySelector('#loginGithub').addEventListener('click', publishLogin)
-  document.querySelector('#deletePost').addEventListener('click', () => { if (!state.active) return; state.posts = state.posts.filter(post => post.id !== state.active); const next = state.posts[0] || blankPost(); if (!state.posts.length) state.posts.push(next); state.active = next.id; fillForm(next); saveDrafts(); renderList(); showToast('草稿已删除') })
+  document.querySelector('#deletePost').addEventListener('click', () => {
+    if (state.active?.kind !== 'draft') return
+    state.drafts = state.drafts.filter(post => post.id !== state.active.id)
+    saveDrafts()
+    if (state.drafts.length) selectPost('draft', state.drafts[0].id)
+    else if (state.publishedPosts.length) selectPost('published', postKey(state.publishedPosts[0]))
+    else { state.active = null; fillForm(blankPost()); renderList() }
+    showToast('本地草稿已删除')
+  })
   document.querySelector('#previewPost').addEventListener('click', () => { const current = readForm(); if (!current.title) { showToast('请先填写标题'); return }; showPreview(current) })
-  document.querySelector('#exportAll').addEventListener('click', () => { const current = upsertCurrent(); if (current) download(`${current.slug}.md`, toMarkdown(current), 'text/markdown;charset=utf-8') })
+  document.querySelector('#exportCurrent').addEventListener('click', () => {
+    const current = readForm()
+    if (!current.title) { showToast('请先填写标题'); return }
+    current.slug = current.slug || slugify(current.title)
+    download(`${current.slug}.md`, toMarkdown(current), 'text/markdown;charset=utf-8')
+  })
   document.querySelector('#importMarkdown').addEventListener('click', () => document.querySelector('#markdownFile').click())
-  document.querySelector('#markdownFile').addEventListener('change', async event => { const file = event.target.files[0]; if (!file) return; const post = parseMarkdown(await file.text()); post.id = `draft-${Date.now()}`; state.posts.unshift(post); state.active = post.id; fillForm(post); saveDrafts(); renderList(); showToast('Markdown 已导入本机') })
+  document.querySelector('#markdownFile').addEventListener('change', async event => {
+    const file = event.target.files[0]
+    if (!file) return
+    const post = parseMarkdown(await file.text())
+    post.id = `draft-${Date.now()}`
+    state.drafts.unshift(post); state.active = { kind: 'draft', id: post.id }
+    fillForm(post); saveDrafts(); renderList(); showToast('Markdown 已导入本机')
+    event.target.value = ''
+  })
   const params = new URLSearchParams(location.search)
   if (params.get('auth') === 'success') showToast('GitHub 登录成功')
   if (params.get('auth') === 'error') {

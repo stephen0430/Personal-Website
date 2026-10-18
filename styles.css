@@ -194,6 +194,11 @@ img { display: block; max-width: 100%; }
 .post-info p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 .post-meta { display: flex; gap: 9px; flex-wrap: wrap; color: var(--muted); font-size: 0.76rem; }
 .post-meta a { color: var(--accent); }
+.post-date-meta { display: grid; gap: 2px; color: var(--muted); font-size: 0.75rem; line-height: 1.55; }
+.post-date-meta span { display: flex; flex-wrap: wrap; column-gap: 4px; }
+.post-date-meta strong { font-weight: 600; }
+.page-banner .post-date-meta { margin-top: 14px; color: rgba(255, 255, 255, 0.82); }
+.page-banner .post-date-meta strong { font-weight: 500; }
 .post-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 18px; }
 .tag-chip { display: inline-flex; padding: 4px 8px; border-radius: 999px; color: var(--accent-strong); background: var(--accent-soft); font-size: 0.74rem; }
 
@@ -328,6 +333,7 @@ img { display: block; max-width: 100%; }
 .button-primary { border-color: var(--accent); color: #fff; background: var(--accent); }
 .button-ghost { color: var(--ink); background: transparent; }
 .button-danger { color: var(--danger); background: transparent; border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.button[hidden] { display: none; }
 .button:hover { transform: translateY(-1px); }
 .button:disabled { cursor: not-allowed; opacity: 0.5; transform: none; }
 
@@ -342,15 +348,20 @@ img { display: block; max-width: 100%; }
 .admin-sidebar { position: sticky; top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
 .panel-head h2 { margin: 5px 0 0; font-size: 1.35rem; }
-.admin-post-list { display: grid; gap: 6px; margin: 22px 0; }
+.admin-list-section { margin-top: 18px; }
+.admin-list-section + .admin-list-section { padding-top: 16px; border-top: 1px solid var(--line); }
+.admin-list-section h3 { margin: 0; font-size: 0.86rem; }
+.admin-post-list { display: grid; gap: 6px; max-height: 330px; margin: 10px 0 0; overflow: auto; }
 .admin-post-item { display: block; width: 100%; padding: 11px 12px; border: 1px solid transparent; border-radius: 6px; color: var(--ink); background: transparent; text-align: left; }
 .admin-post-item:hover, .admin-post-item.is-active { border-color: var(--accent-soft); background: var(--surface-soft); }
 .admin-post-item strong { display: block; font-size: 0.82rem; }
 .admin-post-item small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.7rem; }
+.admin-post-status { display: inline-block; margin-top: 4px; color: var(--accent-strong); font-size: 0.68rem; font-weight: 700; }
 .admin-export-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
 .admin-editor { padding: 24px; }
 .editor-form { display: grid; gap: 16px; margin-top: 24px; }
 .editor-form label { display: grid; gap: 7px; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.editor-form label small { font-size: 0.7rem; font-weight: 400; }
 .editor-form input, .editor-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; outline: none; color: var(--ink); background: var(--surface-soft); resize: vertical; }
 .editor-form input:focus, .editor-form textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
