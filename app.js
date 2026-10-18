@@ -340,7 +340,7 @@ const updateFooterRuntime = () => {
 }
 
 const init = async () => {
-  const [siteResponse, postsResponse] = await Promise.all([fetch('content/site.json'), fetch('content/posts.json')])
+  const [siteResponse, postsResponse] = await Promise.all([fetch('content/site.json?v=homepage-layout-fixes-1'), fetch('content/posts.json')])
   state.site = await siteResponse.json(); state.posts = await postsResponse.json()
   setTheme(state.theme)
   const visitCount = Number(localStorage.getItem('qxy-visits') || 0) + 1
