@@ -23,6 +23,16 @@ const dictionary = {
     'home.profile': '关于我', 'home.categories': '分类', 'home.tags': '常用标签', 'home.archivePanel': '归档', 'home.stats': '网站信息',
     'home.posts': '文章', 'home.words': '总字数', 'home.views': '访问量', 'home.rss': 'RSS', 'home.sitemap': '站点地图', 'home.admin': '管理台', 'home.subscribe': '订阅', 'home.view': '查看', 'home.manage': '管理', 'article.back': '返回首页', 'post.published': '发表于', 'post.updated': '更新于：',
     'article.comments': '评论', 'article.commentsHint': '评论区已预留，配置 Giscus 后即可启用。',
+    'article.author': '文章作者', 'article.link': '文章链接', 'article.copyright': '版权声明',
+    'article.copyrightText': '本文由 QXY 发布于 QXY Web，转载请注明作者、原文链接及来源。', 'article.disclaimerLabel': '免责声明',
+    'article.disclaimer': '本文仅为作者个人经验分享，供学习交流，不构成专业建议或操作保证。内容可能存在疏漏，软件版本、设备与环境差异也可能导致结果不同；请结合官方文档核验，操作前做好备份并先在可控环境验证。未核实适用条件而直接照搬所产生的风险，请自行评估并承担。',
+    'article.share': '分享文章', 'article.next': '下一篇', 'article.previous': '上一篇',
+    'article.navigation': '文章导航', 'article.copyFailed': '复制失败，请检查浏览器权限后重试。',
+    'article.latest': '最新文章', 'article.wechatTitle': '用微信分享',
+    'article.wechatHint': '使用微信扫描二维码打开本文。', 'article.copyLink': '复制文章链接',
+    'article.linkCopied': '文章链接已复制', 'article.qrUnavailable': '二维码暂时无法加载，可复制文章链接后在微信中发送。',
+    'common.close': '关闭', 'share.facebook': '分享到 Facebook', 'share.twitter': '分享到 Twitter',
+    'share.wechat': '分享到微信', 'share.weibo': '分享到微博', 'share.qq': '分享到 QQ',
     'article.toc': '目录', 'article.copy': '复制', 'article.copied': '已复制', 'about.title': '关于 QXY Web',
     'about.label': 'ABOUT', 'friends.title': '友链', 'archive.title': '时间轴', 'categories.title': '分类',
     'tags.title': '标签', 'empty': '这里还没有内容。'
@@ -34,6 +44,16 @@ const dictionary = {
     'home.profile': 'About me', 'home.categories': 'Categories', 'home.tags': 'Common tags', 'home.archivePanel': 'Archive', 'home.stats': 'Site info',
     'home.posts': 'Posts', 'home.words': 'Words', 'home.views': 'Visits', 'home.rss': 'RSS', 'home.sitemap': 'Sitemap', 'home.admin': 'Admin', 'home.subscribe': 'Subscribe', 'home.view': 'View', 'home.manage': 'Manage', 'article.back': 'Back home', 'post.published': 'Published: ', 'post.updated': 'Updated: ',
     'article.comments': 'Comments', 'article.commentsHint': 'The comment area is ready for Giscus configuration.',
+    'article.author': 'Author', 'article.link': 'Article link', 'article.copyright': 'Copyright',
+    'article.copyrightText': 'Published by QXY on QXY Web. Please credit the author, original link, and source when reproducing this article.', 'article.disclaimerLabel': 'Disclaimer',
+    'article.disclaimer': 'This article reflects the author’s personal experience and is for learning and discussion only. It is not professional advice or a guarantee of results. It may contain omissions, and software versions, devices, and environments can differ. Verify details against official documentation, back up your data, and test in a controlled environment before acting. Assess and accept the risks of applying these instructions without checking their suitability.',
+    'article.share': 'Share this article', 'article.next': 'Next article', 'article.previous': 'Previous article',
+    'article.navigation': 'Article navigation', 'article.copyFailed': 'Copy failed. Check browser permissions and try again.',
+    'article.latest': 'Latest articles', 'article.wechatTitle': 'Share with WeChat',
+    'article.wechatHint': 'Scan this QR code with WeChat to open the article.', 'article.copyLink': 'Copy article link',
+    'article.linkCopied': 'Article link copied', 'article.qrUnavailable': 'The QR code could not be loaded. Copy the article link and send it in WeChat.',
+    'common.close': 'Close', 'share.facebook': 'Share on Facebook', 'share.twitter': 'Share on Twitter',
+    'share.wechat': 'Share on WeChat', 'share.weibo': 'Share on Weibo', 'share.qq': 'Share on QQ',
     'article.toc': 'On this page', 'article.copy': 'Copy', 'article.copied': 'Copied', 'about.title': 'About QXY Web',
     'about.label': 'ABOUT', 'friends.title': 'Links', 'archive.title': 'Timeline', 'categories.title': 'Categories',
     'tags.title': 'Tags', 'empty': 'Nothing here yet.'
@@ -130,6 +150,64 @@ const renderPostDates = post => `<div class="post-date-meta"><span><strong>${t('
 const wordCount = post => post.content.replace(/[`#>*_\-\[\]()]/g, '').replace(/\s/g, '').length
 const sortedPosts = () => [...state.posts].sort((a, b) => b.date.localeCompare(a.date))
 const recentlyUpdatedPosts = () => [...state.posts].sort((a, b) => (b.updated || b.date).localeCompare(a.updated || a.date))
+const articleUrl = post => {
+  const url = new URL(location.pathname || '/', location.origin)
+  url.search = ''
+  url.hash = `post/${encodeURIComponent(post.slug)}`
+  return url.href
+}
+
+const renderLatestArticles = () => `<section class="side-card latest-articles-card"><h3>${t('article.latest')}</h3><div class="latest-articles-list">${sortedPosts().slice(0, 5).map(post => `<a class="latest-article" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="" loading="lazy" /><span class="latest-article-copy"><strong>${escapeHtml(localized(post, 'title') || post.title)}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span></a>`).join('')}</div></section>`
+
+const getAdjacentPost = post => {
+  const posts = sortedPosts()
+  const index = posts.findIndex(item => item.slug === post.slug)
+  if (index < 0 || posts.length < 2) return null
+  if (posts[index + 1]) return { post: posts[index + 1], direction: 'next' }
+  return { post: posts[index - 1], direction: 'previous' }
+}
+
+const renderArticleNavigation = post => {
+  const adjacent = getAdjacentPost(post)
+  if (!adjacent) return ''
+  const { post: nextPost, direction } = adjacent
+  return `<nav class="article-next-nav" aria-label="${t('article.navigation')}"><a class="article-next-link" href="#post/${encodeURIComponent(nextPost.slug)}"><img src="${safeUrl(assetUrl(nextPost.cover || state.site.defaultCover))}" alt="" loading="lazy" /><span class="article-next-overlay"><span>${t(`article.${direction}`)}</span><strong>${escapeHtml(localized(nextPost, 'title') || nextPost.title)}</strong><time datetime="${escapeHtml(nextPost.date)}">${formatDate(nextPost.date)}</time></span></a></nav>`
+}
+
+const renderShareActions = post => {
+  const url = articleUrl(post)
+  const title = localized(post, 'title') || post.title
+  const shareLink = (base, values) => {
+    const target = new URL(base)
+    Object.entries(values).forEach(([key, value]) => target.searchParams.set(key, value))
+    return target.href
+  }
+  const facebook = shareLink('https://www.facebook.com/sharer/sharer.php', { u: url })
+  const twitter = shareLink('https://twitter.com/intent/tweet', { url, text: title })
+  const weibo = shareLink('https://service.weibo.com/share/share.php', { url, title })
+  const qq = shareLink('https://connect.qq.com/widget/shareqq/index.html', { url, title, summary: post.excerpt || '', pics: new URL(assetUrl(post.cover || state.site.defaultCover), location.href).href })
+  const qr = shareLink('https://api.qrserver.com/v1/create-qr-code/', { size: '220x220', data: url })
+  return `<nav class="article-share-row" aria-label="${t('article.share')}">
+    <a class="share-button share-facebook" href="${escapeHtml(facebook)}" target="_blank" rel="noopener noreferrer" aria-label="${t('share.facebook')}" title="${t('share.facebook')}"><span aria-hidden="true">f</span></a>
+    <a class="share-button share-twitter" href="${escapeHtml(twitter)}" target="_blank" rel="noopener noreferrer" aria-label="${t('share.twitter')}" title="${t('share.twitter')}"><span aria-hidden="true">X</span></a>
+    <button class="share-button share-wechat" type="button" data-open-wechat aria-label="${t('share.wechat')}" title="${t('share.wechat')}"><span aria-hidden="true">微</span></button>
+    <a class="share-button share-weibo" href="${escapeHtml(weibo)}" target="_blank" rel="noopener noreferrer" aria-label="${t('share.weibo')}" title="${t('share.weibo')}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004zM9.05 17.219c-.384.616-1.208.884-1.829.602-.612-.279-.793-.991-.406-1.593.379-.595 1.176-.861 1.793-.601.622.263.82.972.442 1.592zm1.27-1.627c-.141.237-.449.353-.689.253-.236-.09-.313-.361-.177-.586.138-.227.436-.346.672-.24.239.09.315.36.18.601l.014-.028zm.176-2.719c-1.893-.493-4.033.45-4.857 2.118-.836 1.704-.026 3.591 1.886 4.21 1.983.64 4.318-.341 5.132-2.179.8-1.793-.201-3.642-2.161-4.149zm7.563-1.224c-.346-.105-.57-.18-.405-.615.375-.977.42-1.804 0-2.404-.781-1.112-2.915-1.053-5.364-.03 0 0-.766.331-.571-.271.376-1.217.315-2.224-.27-2.809-1.338-1.337-4.869.045-7.888 3.08C1.309 10.87 0 13.273 0 15.348c0 3.981 5.099 6.395 10.086 6.395 6.536 0 10.888-3.801 10.888-6.82 0-1.822-1.547-2.854-2.915-3.284v.01zm1.908-5.092c-.766-.856-1.908-1.187-2.96-.962-.436.09-.706.511-.616.932.09.42.511.691.932.602.511-.105 1.067.044 1.442.465.376.421.466.977.316 1.473-.136.406.089.856.51.992.405.119.857-.105.992-.512.33-1.021.12-2.178-.646-3.035l.03.045zm2.418-2.195c-1.576-1.757-3.905-2.419-6.054-1.968-.496.104-.812.587-.706 1.081.104.496.586.813 1.082.707 1.532-.331 3.185.15 4.296 1.383 1.112 1.246 1.429 2.943.947 4.416-.165.48.106 1.007.586 1.157.479.165.991-.104 1.157-.586.675-2.088.241-4.478-1.338-6.235l.03.045z"/></svg></a>
+    <a class="share-button share-qq" href="${escapeHtml(qq)}" target="_blank" rel="noopener noreferrer" aria-label="${t('share.qq')}" title="${t('share.qq')}"><span aria-hidden="true">Q</span></a>
+  </nav>
+  <dialog class="wechat-share-dialog" data-wechat-dialog aria-labelledby="wechatShareTitle">
+    <div class="wechat-share-head"><div><span class="eyebrow">QXY WEB</span><h2 id="wechatShareTitle">${t('article.wechatTitle')}</h2></div><button class="icon-button" type="button" data-close-wechat aria-label="${t('common.close')}" title="${t('common.close')}">×</button></div>
+    <p>${t('article.wechatHint')}</p>
+    <div class="wechat-qr-frame"><img src="${escapeHtml(qr)}" alt="${t('article.wechatHint')}" data-share-qr referrerpolicy="no-referrer" /><p data-qr-fallback hidden>${t('article.qrUnavailable')}</p></div>
+    <button class="copy-link-button" type="button" data-copy-article-link>${t('article.copyLink')}</button>
+  </dialog>`
+}
+
+const renderArticleCopyright = post => `<section class="article-copyright" aria-label="${t('article.copyright')}">
+  <p><strong>${t('article.author')}：</strong>QXY</p>
+  <p><strong>${t('article.link')}：</strong><a href="${escapeHtml(articleUrl(post))}">${escapeHtml(articleUrl(post))}</a></p>
+  <p><strong>${t('article.copyright')}：</strong>${t('article.copyrightText')}</p>
+  <p class="article-disclaimer"><strong>${t('article.disclaimerLabel')}：</strong>${t('article.disclaimer')}</p>
+</section>`
 const countBy = key => state.posts.reduce((map, post) => {
   const value = post[key]
   if (Array.isArray(value)) value.forEach(item => { map[item] = (map[item] || 0) + 1 })
@@ -239,7 +317,20 @@ const renderArticle = post => {
   const title = localized(post, 'title') || post.title
   const category = localized(post, 'category') || post.category
   document.title = `${title} · ${state.site.name}`
-  return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(title)}</h1>${renderPostDates(post)}<div class="post-meta"><span>${escapeHtml(category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section><section class="page-section"><div class="article-layout"><article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(title)}" data-lightbox /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div><section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section></div></article><aside class="article-aside"><div class="toc-card"><h3>${t('article.toc')}</h3>${headings.length ? headings.map((heading, index) => { const id = heading.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index}`; return `<a href="#${id}">${index + 1}. ${escapeHtml(heading)}</a>` }).join('') : `<span class="muted">${t('empty')}</span>`}</div>${renderProfile()}</aside></div></section>`
+  return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(title)}</h1>${renderPostDates(post)}<div class="post-meta"><span>${escapeHtml(category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section>
+    <section class="page-section"><div class="article-layout">
+      <article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(title)}" data-lightbox /></div>
+        <div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header>
+          <div class="article-body">${renderMarkdown(post.content)}</div>
+          <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div>
+          <section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section>
+          ${renderArticleCopyright(post)}
+          ${renderShareActions(post)}
+          ${renderArticleNavigation(post)}
+        </div>
+      </article>
+      <aside class="article-aside">${headings.length ? `<div class="toc-card"><h3>${t('article.toc')}</h3>${headings.map((heading, index) => { const id = heading.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index}`; return `<a href="#${id}">${index + 1}. ${escapeHtml(heading)}</a>` }).join('')}</div>` : ''}${renderProfile()}${renderLatestArticles()}</aside>
+    </div></section>`
 }
 
 const renderFiltered = (type, value) => {
@@ -263,13 +354,14 @@ const startHeroTyping = () => {
 }
 
 const route = () => {
-  const queryPost = new URLSearchParams(location.search).get('post')
-  if (queryPost) {
+  const hash = decodeURIComponent(location.hash.replace(/^#/, '') || 'home')
+  if (hash === 'home') {
+    const queryPost = new URLSearchParams(location.search).get('post')
     const post = state.posts.find(item => item.slug === queryPost)
     if (post) return renderArticle(post)
+    document.title = `${state.site.name} · ${state.site.displayName}`
+    return renderHome()
   }
-  const hash = decodeURIComponent(location.hash.replace(/^#/, '') || 'home')
-  if (hash === 'home') { document.title = `${state.site.name} · ${state.site.displayName}`; return renderHome() }
   if (hash === 'archive') return renderArchive()
   if (hash === 'categories') return renderCategories()
   if (hash === 'tags') return renderTags()
@@ -305,6 +397,37 @@ const bindArticleActions = () => {
     layer.addEventListener('click', () => layer.remove())
     document.body.append(layer)
   }))
+
+  const dialog = document.querySelector('[data-wechat-dialog]')
+  if (!dialog) return
+  document.querySelector('[data-open-wechat]')?.addEventListener('click', () => dialog.showModal())
+  document.querySelector('[data-close-wechat]')?.addEventListener('click', () => dialog.close())
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close() })
+  document.querySelector('[data-share-qr]')?.addEventListener('error', event => {
+    event.currentTarget.hidden = true
+    document.querySelector('[data-qr-fallback]').hidden = false
+  })
+  document.querySelector('[data-copy-article-link]')?.addEventListener('click', async () => {
+    const link = document.querySelector('.article-copyright a')?.href
+    if (!link) return
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(link)
+      else {
+        const input = document.createElement('textarea')
+        input.value = link
+        input.style.position = 'fixed'
+        input.style.opacity = '0'
+        document.body.append(input)
+        input.select()
+        const copied = document.execCommand('copy')
+        input.remove()
+        if (!copied) throw new Error('Clipboard unavailable')
+      }
+      showToast(t('article.linkCopied'))
+    } catch {
+      showToast(t('article.copyFailed'))
+    }
+  })
 }
 
 const openSearch = () => {
