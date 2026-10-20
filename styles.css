@@ -279,6 +279,9 @@ img { display: block; max-width: 100%; }
 .comments-box { margin-top: 28px; padding: 20px; border: 1px dashed var(--line); border-radius: 6px; background: var(--surface-soft); }
 .comments-box h3 { margin: 0 0 6px; font-size: 1rem; }
 .comments-box p { margin: 0; color: var(--muted); font-size: 0.82rem; }
+.comments-box-live { border-style: solid; }
+.giscus { width: 100%; min-height: 120px; }
+.giscus-frame { width: 100%; }
 .article-copyright { margin-top: 16px; padding: 18px 20px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--surface-soft); font-size: 0.82rem; }
 .article-copyright p { margin: 0; line-height: 1.65; }
 .article-copyright p + p { margin-top: 8px; }

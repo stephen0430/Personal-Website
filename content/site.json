@@ -52,11 +52,18 @@
   },
   "comments": {
     "provider": "giscus",
-    "enabled": false,
-    "repo": "",
-    "repoId": "",
-    "category": "",
-    "categoryId": ""
+    "enabled": true,
+    "repo": "stephen0430/Personal-Website",
+    "repoId": "R_kgDOVLAQsQ",
+    "category": "Announcements",
+    "categoryId": "DIC_kwDOVLAQsc4DJFjC",
+    "mapping": "title",
+    "strict": "0",
+    "reactionsEnabled": "1",
+    "emitMetadata": "0",
+    "inputPosition": "bottom",
+    "theme": "preferred_color_scheme",
+    "lang": "zh-CN"
   },
   "baseUrl": "https://stephen0430.github.io/Personal-Website",
   "publicationApi": "https://qxy0430.pages.dev"

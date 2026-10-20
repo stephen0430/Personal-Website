@@ -208,6 +208,37 @@ const renderArticleCopyright = post => `<section class="article-copyright" aria-
   <p><strong>${t('article.copyright')}：</strong>${t('article.copyrightText')}</p>
   <p class="article-disclaimer"><strong>${t('article.disclaimerLabel')}：</strong>${t('article.disclaimer')}</p>
 </section>`
+
+const commentsReady = () => {
+  const comments = state.site?.comments
+  return comments?.enabled && comments.provider === 'giscus' && comments.repo && comments.repoId && comments.category && comments.categoryId
+}
+
+const renderComments = () => commentsReady()
+  ? `<section class="comments-box comments-box-live"><h3>${t('article.comments')}</h3><div class="giscus" data-giscus-container></div></section>`
+  : `<section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section>`
+
+const initializeGiscus = () => {
+  const container = document.querySelector('[data-giscus-container]')
+  const comments = state.site?.comments
+  if (!container || !commentsReady()) return
+  const script = document.createElement('script')
+  script.src = 'https://giscus.app/client.js'
+  script.async = true
+  script.crossOrigin = 'anonymous'
+  script.dataset.repo = comments.repo
+  script.dataset.repoId = comments.repoId
+  script.dataset.category = comments.category
+  script.dataset.categoryId = comments.categoryId
+  script.dataset.mapping = comments.mapping || 'title'
+  script.dataset.strict = comments.strict || '0'
+  script.dataset.reactionsEnabled = comments.reactionsEnabled || '1'
+  script.dataset.emitMetadata = comments.emitMetadata || '0'
+  script.dataset.inputPosition = comments.inputPosition || 'bottom'
+  script.dataset.theme = comments.theme || 'preferred_color_scheme'
+  script.dataset.lang = comments.lang || (state.lang === 'zh' ? 'zh-CN' : 'en')
+  container.append(script)
+}
 const countBy = key => state.posts.reduce((map, post) => {
   const value = post[key]
   if (Array.isArray(value)) value.forEach(item => { map[item] = (map[item] || 0) + 1 })
@@ -323,7 +354,7 @@ const renderArticle = post => {
         <div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header>
           <div class="article-body">${renderMarkdown(post.content)}</div>
           <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div>
-          <section class="comments-box"><h3>${t('article.comments')}</h3><p>${t('article.commentsHint')}</p></section>
+          ${renderComments()}
           ${renderArticleCopyright(post)}
           ${renderShareActions(post)}
           ${renderArticleNavigation(post)}
@@ -379,6 +410,7 @@ const render = () => {
   updateFooterRuntime()
   startHeroTyping()
   app.focus({ preventScroll: true })
+  initializeGiscus()
   bindArticleActions()
 }
 
