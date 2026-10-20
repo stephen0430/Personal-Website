@@ -1,6 +1,6 @@
 ---
 title: Cloudflare Pages + GitHub OAuth 安全发布配置手册
-titleEn: 
+titleEn: Cloudflare Pages + GitHub OAuth Secure Publishing Setup Guide
 date: 2026-10-17
 updated: 2026-10-18
 category: 随笔
@@ -9,7 +9,7 @@ tags: [个人网站建立]
 tagsEn: []
 cover: /assets/cover.webp
 excerpt: 记录 QXY Web 从 Cloudflare Pages 部署，到 GitHub OAuth 登录，再到管理台发布文章的完整配置流程。
-excerptEn: 
+excerptEn: A complete guide to deploying QXY Web on Cloudflare Pages, signing in with GitHub OAuth, and publishing posts from the admin dashboard.
 slug: cloudflare-pages-github-oauth
 ---
 

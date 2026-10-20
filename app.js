@@ -508,25 +508,22 @@ const renderSearch = query => {
 const openDrawer = () => { const drawer = document.querySelector('#mobileDrawer'); drawer.classList.add('is-open'); drawer.setAttribute('aria-hidden', 'false') }
 const closeDrawer = () => { const drawer = document.querySelector('#mobileDrawer'); drawer.classList.remove('is-open'); drawer.setAttribute('aria-hidden', 'true') }
 
-const padTime = value => String(value).padStart(2, '0')
 const updateFooterRuntime = () => {
   const target = document.querySelector('#footerRuntime')
   if (!target || !state.site?.createdAt) return
-  let seconds = Math.max(0, Math.floor((Date.now() - new Date(state.site.createdAt).getTime()) / 1000))
-  const years = Math.floor(seconds / (365 * 24 * 3600)); seconds %= 365 * 24 * 3600
-  const days = Math.floor(seconds / (24 * 3600)); seconds %= 24 * 3600
-  const hours = Math.floor(seconds / 3600); seconds %= 3600
-  const minutes = Math.floor(seconds / 60); const remainder = seconds % 60
+  const elapsedDays = Math.max(0, Math.floor((Date.now() - new Date(state.site.createdAt).getTime()) / 86400000))
+  const years = Math.floor(elapsedDays / 365)
+  const days = elapsedDays % 365
   const beijing = new Intl.DateTimeFormat(state.lang === 'zh' ? 'zh-CN' : 'en-US', {
     timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
   }).format(new Date())
   target.textContent = state.lang === 'zh'
-    ? `网站运行 ${years} 年 ${days} 天 ${padTime(hours)}:${padTime(minutes)}:${padTime(remainder)} · 北京时间 ${beijing}`
-    : `Online ${years}y ${days}d ${padTime(hours)}:${padTime(minutes)}:${padTime(remainder)} · Beijing ${beijing}`
+    ? `网站运行 ${years} 年 ${days} 天 · 北京时间 ${beijing}`
+    : `Online ${years}y ${days}d · Beijing ${beijing}`
 }
 
 const init = async () => {
-  const [siteResponse, postsResponse] = await Promise.all([fetch('content/site.json?v=homepage-layout-fixes-1'), fetch('content/posts.json')])
+  const [siteResponse, postsResponse] = await Promise.all([fetch('content/site.json?v=homepage-layout-fixes-1'), fetch('content/posts.json?v=first-post-translation-1')])
   state.site = await siteResponse.json(); state.posts = await postsResponse.json()
   setTheme(state.theme)
   const visitCount = Number(localStorage.getItem('qxy-visits') || 0) + 1
