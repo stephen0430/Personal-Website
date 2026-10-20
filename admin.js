@@ -65,10 +65,6 @@ const checkAuth = async () => {
 }
 
 const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: shanghaiToday(), updated: '', category: '随笔', tags: [], cover: '', excerpt: '', content: '' })
-const previewDate = date => {
-  const [year, month, day] = String(date || '').split('-')
-  return year && month && day ? `${year}年${Number(month)}月${Number(day)}日` : ''
-}
 const authErrorMessage = reason => ({
   oauth_denied: 'GitHub 拒绝了本次授权。请重新登录并完成授权。',
   state_cookie_missing: '浏览器没有带回 OAuth 临时 Cookie。请确认登录和回调都使用 qxy0430.pages.dev 域名。',
@@ -249,62 +245,32 @@ const escapeHtml = value => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
-const renderPreviewMarkdown = markdown => {
-  const codeBlocks = []
-  const source = String(markdown || '').replace(/```(\w*)\n([\s\S]*?)```/g, (_, language, code) => {
-    const index = codeBlocks.push({ language: language || 'text', code: code.trimEnd() }) - 1
-    return `\n@@CODE_${index}@@\n`
-  })
-  const inline = value => escapeHtml(value)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-  const output = []
-  let paragraph = []
-  const flush = () => { if (paragraph.length) { output.push(`<p>${paragraph.map(inline).join('<br />')}</p>`); paragraph = [] } }
-  for (const line of source.split(/\r?\n/)) {
-    const text = line.trim()
-    const code = text.match(/^@@CODE_(\d+)@@$/)
-    if (code) {
-      flush()
-      const block = codeBlocks[Number(code[1])]
-      output.push(`<div class="code-block"><div class="code-label">${escapeHtml(block.language)}</div><pre>${escapeHtml(block.code)}</pre></div>`)
-      continue
-    }
-    if (!text) { flush(); continue }
-    const heading = text.match(/^(#{2,4})\s+(.+)$/)
-    if (heading) {
-      flush()
-      const level = heading[1].length
-      const title = heading[2].replace(/[*_`]/g, '')
-      output.push(`<h${level}>${inline(title)}</h${level}>`)
-      continue
-    }
-    const item = text.match(/^[-*]\s+(.+)$/)
-    if (item) {
-      flush()
-      const previous = output[output.length - 1]
-      if (!previous || !previous.endsWith('</ul>')) output.push('<ul>')
-      output.push(`<li>${inline(item[1])}</li>`)
-      continue
-    }
-    paragraph.push(text)
-  }
-  flush()
-  const html = output.join('').replace(/(<ul>(?:<li>[\s\S]*?<\/li>)+)(?=<|$)/g, '$1</ul>')
-  return html
-}
-
+const PREVIEW_KEY = 'qxy-article-preview'
 const showPreview = post => {
   document.querySelector('.preview-overlay')?.remove()
-  const headings = [...String(post.content || '').matchAll(/^#{2,4}\s+(.+)$/gm)].map(match => match[1].replace(/[*_`]/g, ''))
   const overlay = document.createElement('div')
   overlay.className = 'preview-overlay'
-  const updated = post.updated || post.date
-  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>发表于：${escapeHtml(previewDate(post.date))} · 更新于：${escapeHtml(previewDate(updated))}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="${escapeHtml(previewAssetUrl(effectiveCover(post)))}" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
+  overlay.setAttribute('role', 'dialog')
+  overlay.setAttribute('aria-label', '文章预览')
+  overlay.setAttribute('aria-modal', 'true')
+  overlay.innerHTML = `<iframe class="preview-frame" title="文章预览" src="index.html#preview"></iframe><div class="preview-toolbar"><span>文章预览 · 未发布</span><button class="button button-primary" data-preview-close type="button">返回编辑</button></div>`
+  const close = () => {
+    overlay.remove()
+    sessionStorage.removeItem(PREVIEW_KEY)
+    document.removeEventListener('keydown', onKeydown)
+    document.querySelector('#previewPost').focus()
+  }
+  const onKeydown = event => { if (event.key === 'Escape') close() }
+  try {
+    sessionStorage.setItem(PREVIEW_KEY, JSON.stringify({ ...post, previewCoverUrl: coverPreviews.get(post.cover) || '' }))
+  } catch {
+    showToast('文章过大，无法创建预览')
+    return
+  }
   document.body.append(overlay)
-  overlay.querySelector('[data-preview-close]').addEventListener('click', () => overlay.remove())
-  overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove() })
+  overlay.querySelector('iframe').addEventListener('load', event => event.target.contentWindow.addEventListener('keydown', onKeydown))
+  overlay.querySelector('[data-preview-close]').addEventListener('click', close)
+  document.addEventListener('keydown', onKeydown)
 }
 
 const parseMarkdown = raw => ({ ...blankPost(), ...parseMarkdownPost(raw, shanghaiToday()) })

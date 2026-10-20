@@ -355,26 +355,28 @@ const renderFriends = () => `${renderPageBanner('FRIENDS', t('friends.title'))}<
 
 const getHeadings = post => parseMarkdownHeadings(post.content)
 
-const renderArticle = post => {
+const renderArticle = (post, preview = false) => {
   const headings = getHeadings(post)
   const viewKey = `qxy-view-${post.slug}`
-  localStorage.setItem(viewKey, String(Number(localStorage.getItem(viewKey) || 0) + 1))
+  if (!preview) localStorage.setItem(viewKey, String(Number(localStorage.getItem(viewKey) || 0) + 1))
   const title = localized(post, 'title') || post.title
   const category = localized(post, 'category') || post.category
+  const previewCover = preview && String(post.previewCoverUrl || '').startsWith(`blob:${location.origin}/`) ? post.previewCoverUrl : ''
+  const coverSource = previewCover || assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover)
   document.title = `${title} · ${state.site.name}`
-  return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(title)}</h1>${renderPostDates(post)}<div class="post-meta"><span>${escapeHtml(category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section>
+  return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="${preview ? '#preview' : '#home'}">← ${t('article.back')}</a><h1>${escapeHtml(title)}</h1>${renderPostDates(post)}<div class="post-meta"><span>${escapeHtml(category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section>
     <section class="page-section"><div class="article-layout">
-      <article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover))}" alt="${escapeHtml(title)}" data-lightbox /></div>
+      <article class="article-card"><div class="article-cover"><img src="${previewCover ? escapeHtml(previewCover) : safeUrl(coverSource)}" alt="${escapeHtml(title)}" data-lightbox /></div>
         <div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header>
           <div class="article-body">${renderMarkdown(post.content)}</div>
-          <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div>
-          ${renderComments()}
+          <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${preview ? '预览模式' : `${localStorage.getItem(viewKey)} views`}</span></div>
+          ${preview ? '' : renderComments()}
           ${renderArticleCopyright(post)}
-          ${renderShareActions(post)}
-          ${renderArticleNavigation(post)}
+          ${preview ? '' : renderShareActions(post)}
+          ${preview ? '' : renderArticleNavigation(post)}
         </div>
       </article>
-      <aside class="article-aside">${headings.length ? `<nav class="toc-card" aria-label="${t('article.toc')}"><h3>${t('article.toc')}</h3>${headings.map(heading => `<a class="toc-level-${heading.level}" href="#post/${encodeURIComponent(post.slug)}/${encodeURIComponent(heading.id)}">${escapeHtml(heading.text)}</a>`).join('')}</nav>` : ''}${renderProfile()}${renderLatestArticles()}</aside>
+      <aside class="article-aside">${headings.length ? `<nav class="toc-card" aria-label="${t('article.toc')}"><h3>${t('article.toc')}</h3>${headings.map(heading => `<a class="toc-level-${heading.level}" href="${preview ? '#preview' : `#post/${encodeURIComponent(post.slug)}`}/${encodeURIComponent(heading.id)}">${escapeHtml(heading.text)}</a>`).join('')}</nav>` : ''}${renderProfile()}${renderLatestArticles()}</aside>
     </div></section>`
 }
 
@@ -401,6 +403,15 @@ const startHeroTyping = () => {
 const route = () => {
   state.pendingAnchor = ''
   const hash = decodeURIComponent(location.hash.replace(/^#/, '') || 'home')
+  if (hash === 'preview' || hash.startsWith('preview/')) {
+    let previewPost
+    try { previewPost = JSON.parse(sessionStorage.getItem('qxy-article-preview') || 'null') } catch { previewPost = null }
+    if (previewPost?.title && typeof previewPost.content === 'string') {
+      state.pendingAnchor = hash.startsWith('preview/') ? hash.slice('preview/'.length) : ''
+      return renderArticle({ ...previewPost, tags: Array.isArray(previewPost.tags) ? previewPost.tags : [] }, true)
+    }
+    return renderHome()
+  }
   if (hash === 'home') {
     const queryPost = new URLSearchParams(location.search).get('post')
     const post = state.posts.find(item => item.slug === queryPost)
