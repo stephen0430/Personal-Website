@@ -18,10 +18,16 @@ const validSourcePath = value => {
   const filename = value.slice('content/posts/'.length)
   return /^[\p{L}\p{N}._-]+\.md$/u.test(filename) && filename !== '.md' && !filename.startsWith('.')
 }
+const validCover = value => {
+  if (!value) return true
+  if (typeof value !== 'string' || /[\r\n<>"']/.test(value)) return false
+  if (value.startsWith('/')) return !value.startsWith('//') && !/\s/.test(value)
+  try { return ['https:', 'http:'].includes(new URL(value).protocol) } catch { return false }
+}
 const markdownFor = (post, date, updated) => {
   const tags = (post.tags || []).map(cleanLine).filter(Boolean)
   const tagsEn = (post.tagsEn || []).map(cleanLine).filter(Boolean)
-  return `---\ntitle: ${cleanLine(post.title)}\ntitleEn: ${cleanLine(post.titleEn)}\ndate: ${date}\nupdated: ${updated}\ncategory: ${cleanLine(post.category || '随笔')}\ncategoryEn: ${cleanLine(post.categoryEn)}\ntags: [${tags.join(', ')}]\ntagsEn: [${tagsEn.join(', ')}]\ncover: ${cleanLine(post.cover || '/assets/cover.webp')}\nexcerpt: ${cleanLine(post.excerpt)}\nexcerptEn: ${cleanLine(post.excerptEn)}\nslug: ${cleanLine(post.slug)}\n---\n\n${String(post.content || '').trim()}\n`
+  return `---\ntitle: ${cleanLine(post.title)}\ntitleEn: ${cleanLine(post.titleEn)}\ndate: ${date}\nupdated: ${updated}\ncategory: ${cleanLine(post.category || '随笔')}\ncategoryEn: ${cleanLine(post.categoryEn)}\ntags: [${tags.join(', ')}]\ntagsEn: [${tagsEn.join(', ')}]\ncover: ${cleanLine(post.cover)}\nexcerpt: ${cleanLine(post.excerpt)}\nexcerptEn: ${cleanLine(post.excerptEn)}\nslug: ${cleanLine(post.slug)}\n---\n\n${String(post.content || '').trim()}\n`
 }
 
 const toBase64 = value => {
@@ -54,6 +60,7 @@ export async function onRequestPost({ request, env }) {
   try {
     const post = await readJson(request)
     if (!post.title || !isValidDate(post.date) || !post.content) return withCors(request, env, json({ error: 'title, valid date and content are required' }, 400))
+    if (!validCover(post.cover)) return withCors(request, env, json({ error: 'Invalid cover URL' }, 400))
     const isEdit = post.sourcePath !== undefined && post.sourcePath !== ''
     if (isEdit && !validSourcePath(post.sourcePath)) return withCors(request, env, json({ error: 'Invalid article source path' }, 400))
     const slug = slugify(post.slug || post.title)

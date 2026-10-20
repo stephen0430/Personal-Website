@@ -7,6 +7,7 @@
   "avatar": "/assets/avatar.webp",
   "hero": "/assets/hero.webp",
   "defaultCover": "/assets/cover.webp",
+  "categoryCovers": {},
   "profession": "人工智能 · 动力工程",
   "englishProfession": "Artificial Intelligence · Power Engineering",
   "research": "机器视觉 / 大模型",

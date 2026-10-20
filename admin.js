@@ -64,7 +64,7 @@ const checkAuth = async () => {
   }
 }
 
-const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: shanghaiToday(), updated: '', category: '随笔', tags: [], excerpt: '', content: '' })
+const blankPost = () => ({ id: `draft-${Date.now()}`, slug: '', title: '', date: shanghaiToday(), updated: '', category: '随笔', tags: [], cover: '', excerpt: '', content: '' })
 const previewDate = date => {
   const [year, month, day] = String(date || '').split('-')
   return year && month && day ? `${year}年${Number(month)}月${Number(day)}日` : ''
@@ -96,6 +96,25 @@ const getActivePost = () => {
 }
 const findDraftFor = post => state.drafts.find(draft => draft.sourcePath && draft.sourcePath === post.sourcePath)
 
+const coverUrl = value => {
+  const url = String(value || '').trim()
+  if (!url) return ''
+  if (url.startsWith('/') && !url.startsWith('//') && !/[\\\s<>"']/u.test(url)) return url
+  try {
+    const parsed = new URL(url)
+    return ['https:', 'http:'].includes(parsed.protocol) ? parsed.href : ''
+  } catch { return '' }
+}
+const coverPreviews = new Map()
+const previewAssetUrl = url => coverPreviews.get(url) || (url.startsWith('/') && location.hostname.endsWith('.github.io') ? `/${location.pathname.split('/').filter(Boolean)[0]}${url}` : url)
+const effectiveCover = post => coverUrl(post.cover) || coverUrl(state.site?.categoryCovers?.[post.category]) || coverUrl(state.site?.defaultCover) || '/assets/cover.webp'
+const updateCoverPreview = () => {
+  const value = document.querySelector('#postCover').value.trim()
+  const image = document.querySelector('#coverPreview')
+  image.src = previewAssetUrl(coverUrl(value) || effectiveCover({ category: document.querySelector('#postCategory').value }))
+  image.alt = value ? '当前文章封面预览' : '默认封面预览'
+}
+
 const readForm = () => {
   const base = getActivePost() || blankPost()
   return {
@@ -104,6 +123,7 @@ const readForm = () => {
     date: base.sourcePath ? base.date : document.querySelector('#postDate').value,
     category: document.querySelector('#postCategory').value.trim() || '随笔',
     tags: document.querySelector('#postTags').value.split(',').map(item => item.trim()).filter(Boolean),
+    cover: document.querySelector('#postCover').value.trim(),
     excerpt: document.querySelector('#postExcerpt').value.trim(),
     content: document.querySelector('#postContent').value
   }
@@ -120,6 +140,8 @@ const fillForm = post => {
   document.querySelector('#postCategory').value = post.category || '随笔'
   document.querySelector('#categoryNote').textContent = `类别：${categoryNames().join('、') || '暂无'}`
   document.querySelector('#postTags').value = (post.tags || []).join(', ')
+  document.querySelector('#postCover').value = post.cover || ''
+  updateCoverPreview()
   document.querySelector('#postExcerpt').value = post.excerpt || ''
   document.querySelector('#postContent').value = post.content || ''
   document.querySelector('#savePost').textContent = isPublished ? '保存本地修改' : '保存草稿'
@@ -160,6 +182,7 @@ const saveDraft = () => {
   const current = readForm()
   if (!current.title) { showToast('请先填写标题'); return null }
   if (!current.date) { showToast('请设置发布日期'); return null }
+  if (current.cover && !coverUrl(current.cover)) { showToast('封面地址须为 http(s) 链接或站内绝对路径'); return null }
   current.slug = current.slug || slugify(current.title)
   current.id = state.active?.kind === 'draft' ? state.active.id : `draft-${Date.now()}`
   const index = state.drafts.findIndex(post => post.id === current.id)
@@ -217,7 +240,7 @@ const download = (filename, content, type = 'text/plain;charset=utf-8') => {
   link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href)
 }
 
-const toMarkdown = post => `---\ntitle: ${post.title}\ntitleEn: ${post.titleEn || ''}\ndate: ${post.date}\nupdated: ${post.updated || post.date}\ncategory: ${post.category}\ncategoryEn: ${post.categoryEn || ''}\ntags: [${(post.tags || []).join(', ')}]\ntagsEn: [${(post.tagsEn || []).join(', ')}]\ncover: ${post.cover || '/assets/cover.webp'}\nexcerpt: ${post.excerpt || ''}\nexcerptEn: ${post.excerptEn || ''}\nslug: ${post.slug || ''}\n---\n\n${String(post.content || '').trim()}\n`
+const toMarkdown = post => `---\ntitle: ${post.title}\ntitleEn: ${post.titleEn || ''}\ndate: ${post.date}\nupdated: ${post.updated || post.date}\ncategory: ${post.category}\ncategoryEn: ${post.categoryEn || ''}\ntags: [${(post.tags || []).join(', ')}]\ntagsEn: [${(post.tagsEn || []).join(', ')}]\ncover: ${post.cover || ''}\nexcerpt: ${post.excerpt || ''}\nexcerptEn: ${post.excerptEn || ''}\nslug: ${post.slug || ''}\n---\n\n${String(post.content || '').trim()}\n`
 
 const escapeHtml = value => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -278,7 +301,7 @@ const showPreview = post => {
   const overlay = document.createElement('div')
   overlay.className = 'preview-overlay'
   const updated = post.updated || post.date
-  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>发表于：${escapeHtml(previewDate(post.date))} · 更新于：${escapeHtml(previewDate(updated))}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="/assets/cover.webp" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
+  overlay.innerHTML = `<div class="preview-toolbar"><span>文章预览</span><button class="icon-button" data-preview-close type="button" aria-label="关闭预览">×</button></div><div class="preview-page"><header class="preview-hero" style="background-image:url('/assets/hero.webp')"><div><span class="eyebrow">QXY WEB</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>发表于：${escapeHtml(previewDate(post.date))} · 更新于：${escapeHtml(previewDate(updated))}</p></div></header><div class="preview-layout"><article class="article-card"><div class="article-cover"><img src="${escapeHtml(previewAssetUrl(effectiveCover(post)))}" alt="${escapeHtml(post.title)}" /></div><div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(post.category || '随笔')}</span><h1>${escapeHtml(post.title || '未命名文章')}</h1><p>${(post.tags || []).map(escapeHtml).join(' / ')}</p></header><div class="article-body">${renderPreviewMarkdown(post.content)}</div><div class="article-footer"><span>QXY Web · Xinyan Qin</span><span>预览模式</span></div></div></article><aside class="toc-card"><h3>目录</h3>${headings.length ? headings.map((heading, index) => `<a href="#">${index + 1}. ${escapeHtml(heading)}</a>`).join('') : '<span class="muted">暂无标题</span>'}</aside></div></div>`
   document.body.append(overlay)
   overlay.querySelector('[data-preview-close]').addEventListener('click', () => overlay.remove())
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove() })
@@ -294,7 +317,7 @@ const normalizePublished = post => ({
   tags: Array.isArray(post.tags) ? post.tags : []
 })
 
-const samePostContent = (left, right) => ['title', 'date', 'category', 'excerpt', 'content'].every(key => (left[key] || '') === (right[key] || ''))
+const samePostContent = (left, right) => ['title', 'date', 'category', 'cover', 'excerpt', 'content'].every(key => (left[key] || '') === (right[key] || ''))
   && JSON.stringify(left.tags || []) === JSON.stringify(right.tags || [])
 
 const restoreDrafts = stored => {
@@ -344,6 +367,46 @@ const init = async () => {
     state.active = { kind: 'draft', id: post.id }
     saveDrafts(); fillForm(post); renderList()
   })
+  document.querySelector('#postCover').addEventListener('input', updateCoverPreview)
+  document.querySelector('#postCategory').addEventListener('input', updateCoverPreview)
+  document.querySelector('#removeCover').addEventListener('click', () => {
+    document.querySelector('#postCover').value = ''
+    updateCoverPreview()
+  })
+  document.querySelector('#uploadCover').addEventListener('click', () => document.querySelector('#coverFile').click())
+  document.querySelector('#coverFile').addEventListener('change', async event => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 3 * 1024 * 1024) {
+      showToast('请选择 3 MB 内的 JPG、PNG、WebP 或 GIF 图片'); return
+    }
+    if (!isApiConfigured() || !await checkAuth()) {
+      showToast('请先登录 GitHub，再上传封面'); return
+    }
+    const button = document.querySelector('#uploadCover')
+    button.disabled = true
+    button.textContent = '上传中…'
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1])
+        reader.onerror = () => reject(new Error('读取图片失败'))
+        reader.readAsDataURL(file)
+      })
+      const response = await fetch(`${apiBase()}/api/cover`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: file.type, data: base64 })
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || '上传失败')
+      coverPreviews.set(result.path, URL.createObjectURL(file))
+      document.querySelector('#postCover').value = result.path
+      updateCoverPreview()
+      showToast('封面已上传，请保存草稿或发布文章')
+    } catch (error) { showToast(error.message || '上传失败') }
+    finally { button.disabled = false; button.textContent = '上传图片' }
+  })
   document.querySelector('#savePost').addEventListener('click', saveDraft)
   document.querySelector('#publishPost').addEventListener('click', publishCurrent)
   document.querySelector('#loginGithub').addEventListener('click', publishLogin)
@@ -387,7 +450,7 @@ const init = async () => {
         titleEn: imported.titleEn || current.titleEn || '',
         categoryEn: imported.categoryEn || current.categoryEn || '',
         tagsEn: imported.tagsEn?.length ? imported.tagsEn : current.tagsEn || [],
-        cover: imported.cover || current.cover || '/assets/cover.webp',
+        cover: imported.cover || current.cover || '',
         excerptEn: imported.excerptEn || current.excerptEn || ''
       }
       const index = state.drafts.findIndex(draft => draft.id === updated.id)

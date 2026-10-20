@@ -477,3 +477,10 @@ code { padding: 2px 5px; border-radius: 4px; color: var(--accent-strong); backgr
   .search-layer { padding-top: 84px; }
   .search-box { padding: 20px; }
 }
+
+.cover-editor { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.cover-editor-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cover-editor-head strong, .cover-editor-head small { display: block; }
+.cover-editor-head small { margin-top: 4px; color: var(--muted); }
+.cover-actions { display: flex; gap: 8px; }
+.cover-preview { display: block; width: 100%; height: 180px; border-radius: 6px; object-fit: cover; background: var(--surface-soft); }

@@ -102,3 +102,15 @@ test('sets a new post update date to its initial publication date', async () => 
   assert.match(markdown, /\ndate: 2026-10-13\nupdated: 2026-10-13\n/)
   assert.equal(payload.sha, undefined)
 })
+
+test('saves an empty cover for category/site fallback', async () => {
+  const request = await requestFor(post({ cover: '', sourcePath: undefined }))
+  let markdown = ''
+  const response = await withFetch(async (_, init = {}) => {
+    if (!init.method) return new Response('Not Found', { status: 404 })
+    markdown = Buffer.from(JSON.parse(init.body).content, 'base64').toString('utf8')
+    return Response.json({ commit: {} })
+  }, () => onRequestPost({ request, env }))
+  assert.equal(response.status, 200)
+  assert.match(markdown, /\ncover: \n/)
+})

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>QXY Web · 管理台</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=article-cover-1" />
   </head>
   <body class="admin-body">
     <main class="admin-shell">
@@ -59,6 +59,18 @@
           </div>
           <div class="editor-form">
             <label>标题<input id="postTitle" type="text" placeholder="输入文章标题" /></label>
+            <section class="cover-editor" aria-labelledby="coverHeading">
+              <div class="cover-editor-head">
+                <div><strong id="coverHeading">文章封面</strong><small>未设置时优先使用分类默认封面，其次使用网站默认封面</small></div>
+                <div class="cover-actions">
+                  <button class="button button-ghost" id="uploadCover" type="button">上传图片</button>
+                  <button class="button button-ghost" id="removeCover" type="button">移除</button>
+                  <input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+                </div>
+              </div>
+              <img id="coverPreview" class="cover-preview" alt="文章封面预览" />
+              <label>或填写图片地址<input id="postCover" type="text" placeholder="https://... 或 /assets/covers/example.webp" /></label>
+            </section>
             <div class="form-row">
               <label>发布日期<input id="postDate" type="date" /><small id="postDateNote">新文章可设置发布日期。</small></label>
               <label>分类<input id="postCategory" type="text" placeholder="例如：学习" /><small id="categoryNote">类别：随笔、生活记录、学习、项目复盘</small></label>
@@ -92,6 +104,6 @@
       </section>
     </main>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="admin.js?v=published-edit-4"></script>
+    <script type="module" src="admin.js?v=article-cover-1"></script>
   </body>
 </html>

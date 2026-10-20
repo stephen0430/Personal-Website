@@ -62,7 +62,7 @@ for (const file of files) {
     categoryEn: post.categoryEn || '',
     tags: Array.isArray(post.tags) ? post.tags : [post.tags].filter(Boolean),
     tagsEn: Array.isArray(post.tagsEn) ? post.tagsEn : [post.tagsEn].filter(Boolean),
-    cover: post.cover || site.defaultCover,
+    cover: post.cover || '',
     excerpt: post.excerpt || '',
     excerptEn: post.excerptEn || '',
     content: post.content

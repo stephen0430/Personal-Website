@@ -172,7 +172,7 @@ const articleUrl = post => {
   return url.href
 }
 
-const renderLatestArticles = () => `<section class="side-card latest-articles-card"><h3>${t('article.latest')}</h3><div class="latest-articles-list">${sortedPosts().slice(0, 5).map(post => `<a class="latest-article" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="" loading="lazy" /><span class="latest-article-copy"><strong>${escapeHtml(localized(post, 'title') || post.title)}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span></a>`).join('')}</div></section>`
+const renderLatestArticles = () => `<section class="side-card latest-articles-card"><h3>${t('article.latest')}</h3><div class="latest-articles-list">${sortedPosts().slice(0, 5).map(post => `<a class="latest-article" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover))}" alt="" loading="lazy" /><span class="latest-article-copy"><strong>${escapeHtml(localized(post, 'title') || post.title)}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span></a>`).join('')}</div></section>`
 
 const getAdjacentPost = post => {
   const posts = sortedPosts()
@@ -186,7 +186,7 @@ const renderArticleNavigation = post => {
   const adjacent = getAdjacentPost(post)
   if (!adjacent) return ''
   const { post: nextPost, direction } = adjacent
-  return `<nav class="article-next-nav" aria-label="${t('article.navigation')}"><a class="article-next-link" href="#post/${encodeURIComponent(nextPost.slug)}"><img src="${safeUrl(assetUrl(nextPost.cover || state.site.defaultCover))}" alt="" loading="lazy" /><span class="article-next-overlay"><span>${t(`article.${direction}`)}</span><strong>${escapeHtml(localized(nextPost, 'title') || nextPost.title)}</strong><time datetime="${escapeHtml(nextPost.date)}">${formatDate(nextPost.date)}</time></span></a></nav>`
+  return `<nav class="article-next-nav" aria-label="${t('article.navigation')}"><a class="article-next-link" href="#post/${encodeURIComponent(nextPost.slug)}"><img src="${safeUrl(assetUrl(nextPost.cover || state.site.categoryCovers?.[nextPost.category] || state.site.defaultCover))}" alt="" loading="lazy" /><span class="article-next-overlay"><span>${t(`article.${direction}`)}</span><strong>${escapeHtml(localized(nextPost, 'title') || nextPost.title)}</strong><time datetime="${escapeHtml(nextPost.date)}">${formatDate(nextPost.date)}</time></span></a></nav>`
 }
 
 const renderShareActions = post => {
@@ -200,7 +200,7 @@ const renderShareActions = post => {
   const facebook = shareLink('https://www.facebook.com/sharer/sharer.php', { u: url })
   const twitter = shareLink('https://twitter.com/intent/tweet', { url, text: title })
   const weibo = shareLink('https://service.weibo.com/share/share.php', { url, title })
-  const qq = shareLink('https://connect.qq.com/widget/shareqq/index.html', { url, title, summary: post.excerpt || '', pics: new URL(assetUrl(post.cover || state.site.defaultCover), location.href).href })
+  const qq = shareLink('https://connect.qq.com/widget/shareqq/index.html', { url, title, summary: post.excerpt || '', pics: new URL(assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover), location.href).href })
   const qr = shareLink('https://api.qrserver.com/v1/create-qr-code/', { size: '220x220', data: url })
   return `<nav class="article-share-row" aria-label="${t('article.share')}">
     <a class="share-button share-facebook" href="${escapeHtml(facebook)}" target="_blank" rel="noopener noreferrer" aria-label="${t('share.facebook')}" title="${t('share.facebook')}"><span aria-hidden="true">f</span></a>
@@ -326,7 +326,7 @@ const renderSidebar = () => {
 }
 
 const renderPostCard = post => `<article class="post-card">
-  <a class="post-cover" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(localized(post, 'title') || post.title)}" loading="lazy" /></a>
+  <a class="post-cover" href="#post/${encodeURIComponent(post.slug)}"><img src="${safeUrl(assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover))}" alt="${escapeHtml(localized(post, 'title') || post.title)}" loading="lazy" /></a>
   <div class="post-info"><h3><a href="#post/${encodeURIComponent(post.slug)}">${escapeHtml(localized(post, 'title') || post.title)}</a></h3><p>${escapeHtml(localized(post, 'excerpt') || post.excerpt)}</p>${renderPublishedDate(post)}<div class="post-tags">${post.tags.map(tag => `<a class="tag-chip" href="#tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join('')}</div></div>
 </article>`
 
@@ -364,7 +364,7 @@ const renderArticle = post => {
   document.title = `${title} · ${state.site.name}`
   return `<section class="page-banner" style="--hero-image: url('${assetUrl(state.site.hero)}')"><div class="page-banner-inner"><a class="section-link" href="#home">← ${t('article.back')}</a><h1>${escapeHtml(title)}</h1>${renderPostDates(post)}<div class="post-meta"><span>${escapeHtml(category)}</span><span>·</span><span>${wordCount(post)} words</span></div></div></section>
     <section class="page-section"><div class="article-layout">
-      <article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.defaultCover))}" alt="${escapeHtml(title)}" data-lightbox /></div>
+      <article class="article-card"><div class="article-cover"><img src="${safeUrl(assetUrl(post.cover || state.site.categoryCovers?.[post.category] || state.site.defaultCover))}" alt="${escapeHtml(title)}" data-lightbox /></div>
         <div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header>
           <div class="article-body">${renderMarkdown(post.content)}</div>
           <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${localStorage.getItem(viewKey)} views</span></div>
