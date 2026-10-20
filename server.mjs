@@ -22,7 +22,7 @@ const mime = {
 const server = http.createServer(async (req, res) => {
   try {
     const requestPath = decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname)
-    const relative = requestPath === '/' ? 'index.html' : requestPath.replace(/^\/+/, '')
+    const relative = requestPath === '/admin' ? 'admin.html' : requestPath.replace(/^\/+/, '') || 'index.html'
     const filePath = path.resolve(root, relative)
     if (!filePath.startsWith(root)) {
       res.writeHead(403)
