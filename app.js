@@ -3,7 +3,8 @@ const state = {
   posts: [],
   lang: localStorage.getItem('qxy-lang') || 'zh',
   theme: localStorage.getItem('qxy-theme') || 'light',
-  typingTimer: null
+  typingTimer: null,
+  pendingAnchor: ''
 }
 
 const basePath = location.hostname.endsWith('.github.io')
@@ -86,6 +87,20 @@ const inlineMarkdown = value => {
   return text
 }
 
+const headingSlug = text => text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
+
+const parseMarkdownHeadings = markdown => {
+  const source = String(markdown || '').replace(/```[\w-]*\r?\n[\s\S]*?```/g, '')
+  const counts = new Map()
+  return [...source.matchAll(/^(#{2,4})\s+(.+)$/gm)].map(match => {
+    const text = match[2].replace(/[*_`]/g, '').trim()
+    const baseId = headingSlug(text) || 'section'
+    const count = counts.get(baseId) || 0
+    counts.set(baseId, count + 1)
+    return { level: match[1].length, text, id: count ? `${baseId}-${count + 1}` : baseId }
+  })
+}
+
 const renderMarkdown = markdown => {
   const codeBlocks = []
   const source = String(markdown || '').replace(/```(\w*)\n([\s\S]*?)```/g, (_, language, code) => {
@@ -94,6 +109,8 @@ const renderMarkdown = markdown => {
   })
   const lines = source.split(/\r?\n/)
   const output = []
+  const headings = parseMarkdownHeadings(source)
+  let headingIndex = 0
   let paragraph = []
   let listType = null
 
@@ -120,9 +137,7 @@ const renderMarkdown = markdown => {
     const heading = trimmed.match(/^(#{2,4})\s+(.+)$/)
     if (heading) {
       flushParagraph(); closeList()
-      const level = heading[1].length
-      const text = heading[2].replace(/[*_`]/g, '')
-      const id = text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${output.length}`
+      const { level, text, id } = headings[headingIndex++]
       output.push(`<h${level} id="${id}">${inlineMarkdown(text)}</h${level}>`)
       continue
     }
@@ -339,7 +354,7 @@ const renderAbout = () => `${renderPageBanner('ABOUT', t('about.title'))}<sectio
 
 const renderFriends = () => `${renderPageBanner('FRIENDS', t('friends.title'))}<section class="page-section"><div class="friends-grid">${state.site.links.map(link => `<article class="friend-card"><span class="eyebrow">LINK</span><h3>${escapeHtml(link.label)}</h3><p>${escapeHtml(link.url)}</p><a class="section-link" href="${safeUrl(link.url)}" target="_blank" rel="noreferrer">Open link →</a></article>`).join('')}</div></section>`
 
-const getHeadings = post => [...post.content.matchAll(/^#{2,4}\s+(.+)$/gm)].map(match => match[1].replace(/[*_`]/g, ''))
+const getHeadings = post => parseMarkdownHeadings(post.content)
 
 const renderArticle = post => {
   const headings = getHeadings(post)
@@ -360,7 +375,7 @@ const renderArticle = post => {
           ${renderArticleNavigation(post)}
         </div>
       </article>
-      <aside class="article-aside">${headings.length ? `<div class="toc-card"><h3>${t('article.toc')}</h3>${headings.map((heading, index) => { const id = heading.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || `section-${index}`; return `<a href="#${id}">${index + 1}. ${escapeHtml(heading)}</a>` }).join('')}</div>` : ''}${renderProfile()}${renderLatestArticles()}</aside>
+      <aside class="article-aside">${headings.length ? `<nav class="toc-card" aria-label="${t('article.toc')}"><h3>${t('article.toc')}</h3>${headings.map(heading => `<a class="toc-level-${heading.level}" href="#post/${encodeURIComponent(post.slug)}/${encodeURIComponent(heading.id)}">${escapeHtml(heading.text)}</a>`).join('')}</nav>` : ''}${renderProfile()}${renderLatestArticles()}</aside>
     </div></section>`
 }
 
@@ -385,6 +400,7 @@ const startHeroTyping = () => {
 }
 
 const route = () => {
+  state.pendingAnchor = ''
   const hash = decodeURIComponent(location.hash.replace(/^#/, '') || 'home')
   if (hash === 'home') {
     const queryPost = new URLSearchParams(location.search).get('post')
@@ -398,7 +414,15 @@ const route = () => {
   if (hash === 'tags') return renderTags()
   if (hash === 'about') return renderAbout()
   if (hash === 'friends') return renderFriends()
-  if (hash.startsWith('post/')) { const post = state.posts.find(item => item.slug === hash.slice(5)); return post ? renderArticle(post) : renderHome() }
+  if (hash.startsWith('post/')) {
+    const [slug, ...anchorParts] = hash.slice(5).split('/')
+    const post = state.posts.find(item => item.slug === slug)
+    if (post) {
+      state.pendingAnchor = anchorParts.join('/')
+      return renderArticle(post)
+    }
+    return renderHome()
+  }
   if (hash.startsWith('category/')) return renderFiltered('category', hash.slice(9))
   if (hash.startsWith('tag/')) return renderFiltered('tag', hash.slice(4))
   return renderHome()
@@ -410,6 +434,14 @@ const render = () => {
   updateFooterRuntime()
   startHeroTyping()
   app.focus({ preventScroll: true })
+  if (state.pendingAnchor) {
+    const anchor = state.pendingAnchor
+    state.pendingAnchor = ''
+    window.setTimeout(() => {
+      const target = document.getElementById(anchor)
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
   initializeGiscus()
   bindArticleActions()
 }
