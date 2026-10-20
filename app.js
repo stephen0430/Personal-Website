@@ -322,7 +322,6 @@ const renderSidebar = () => {
     <div class="side-card"><h3>${t('home.categories')}</h3><ul class="side-list">${Object.entries(categories).map(([name, count]) => `<li><a href="#category/${encodeURIComponent(name)}">${escapeHtml(name)}<small>${count}</small></a></li>`).join('')}</ul></div>
     <div class="side-card"><h3>${t('home.tags')}</h3><div class="side-tag-cloud">${Object.entries(tags).sort((a,b) => b[1]-a[1]).slice(0, 12).map(([name, count]) => `<a class="tag-chip" href="#tag/${encodeURIComponent(name)}">${escapeHtml(name)} ${count}</a>`).join('')}</div></div>
     <div class="side-card"><h3>${t('home.archivePanel')}</h3><ul class="side-list archive-side-list">${Object.entries(archives).map(([key, count]) => `<li><a href="#archive">${escapeHtml(archiveLabel(key))}<small>${count}</small></a></li>`).join('')}</ul></div>
-    <div class="side-card"><h3>${t('home.stats')}</h3><ul class="side-list"><li><span>RSS</span><a href="rss.xml">${t('home.subscribe')}</a></li><li><span>Sitemap</span><a href="sitemap.xml">${t('home.view')}</a></li></ul></div>
   </aside>`
 }
 
