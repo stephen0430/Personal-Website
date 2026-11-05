@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>QXY Web</title><link>https://stephen0430.github.io/Personal-Website</link><description>生活就像海洋，只有意志坚强的人，才能到达彼岸。</description>
   <item>
-    <title>U-Net 论文整理与卷积通道问答</title>
+    <title>U-Net 论文学习整理</title>
     <link>https://stephen0430.github.io/Personal-Website/?post=unet-study-notes</link>
     <guid>https://stephen0430.github.io/Personal-Website/?post=unet-study-notes</guid>
     <pubDate>Thu, 05 Nov 2026 00:00:00 GMT</pubDate>

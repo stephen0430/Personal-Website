@@ -1,6 +1,6 @@
 ---
-title: U-Net 论文整理与卷积通道问答
-titleEn: U-Net Paper Notes and Convolution Channel Q&A
+title: U-Net 论文学习整理
+titleEn: U-Net Paper Study Notes
 date: 2026-11-05
 updated: 2026-11-05
 category: 学习
@@ -63,6 +63,6 @@ slug: unet-study-notes
 
 ## 图片
 
-| ![U-Net 论文首页与摘要](/assets/posts/unet/Unet1.png) | ![U-Net 网络结构](/assets/posts/unet/Unet2.png) | ![网络结构与损失函数](/assets/posts/unet/Unet3.png) | ![重叠切块策略](/assets/posts/unet/Unet4.png) |
+| ![U-Net 论文首页与摘要](/assets/posts/unet/Unet1.png) | ![U-Net 网络结构](/assets/posts/unet/Unet2.png) | ![重叠切块策略](/assets/posts/unet/Unet4.png) | ![网络结构与损失函数](/assets/posts/unet/Unet3.png) |
 | --- | --- | --- | --- |
 | ![像素权重图](/assets/posts/unet/Unet5.png) | ![实验结果](/assets/posts/unet/Unet6.png) | ![细胞追踪结果](/assets/posts/unet/Unet7.png) | ![结论与参考文献](/assets/posts/unet/Unet8.png) |
