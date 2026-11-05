@@ -275,6 +275,9 @@ img { display: block; max-width: 100%; }
 .code-copy { position: absolute; top: 6px; right: 8px; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #d8e8ea; background: transparent; font-size: 0.72rem; }
 .code-block pre { margin: 0; padding: 16px; font: 0.86rem/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
 .article-body img { width: auto; max-height: 520px; margin: 22px auto; border-radius: 6px; cursor: zoom-in; }
+.article-image-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+.article-image-grid > div { min-width: 0; }
+.article-body .article-image-grid img { display: block; width: 100%; max-height: none; height: auto; margin: 0; object-fit: contain; }
 .article-footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.78rem; }
 .comments-box { margin-top: 28px; padding: 20px; border: 1px dashed var(--line); border-radius: 6px; background: var(--surface-soft); }
 .comments-box h3 { margin: 0 0 6px; font-size: 1rem; }

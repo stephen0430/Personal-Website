@@ -124,13 +124,29 @@ const renderMarkdown = markdown => {
     listType = null
   }
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
     const trimmed = line.trim()
     const codeMatch = trimmed.match(/^@@CODE_(\d+)@@$/)
     if (codeMatch) {
       flushParagraph(); closeList()
       const block = codeBlocks[Number(codeMatch[1])]
       output.push(`<div class="code-block"><div class="code-label">${escapeHtml(block.language)}</div><button class="code-copy" data-copy-code type="button">${t('article.copy')}</button><pre>${escapeHtml(block.code)}</pre></div>`)
+      continue
+    }
+    const nextLine = lines[lineIndex + 1]?.trim()
+    const isTableSeparator = value => /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?$/.test(value || '')
+    if (trimmed.startsWith('|') && isTableSeparator(nextLine)) {
+      flushParagraph(); closeList()
+      const cells = []
+      let endIndex = lineIndex + 1
+      for (let index = lineIndex + 2; index < lines.length && lines[index].trim().startsWith('|'); index++) {
+        const row = lines[index].trim().replace(/^\||\|$/g, '')
+        cells.push(...row.split('|').map(cell => cell.trim()).filter(Boolean))
+        endIndex = index
+      }
+      output.push(`<div class="article-image-grid">${cells.map(cell => `<div>${inlineMarkdown(cell)}</div>`).join('')}</div>`)
+      lineIndex = endIndex
       continue
     }
     if (!trimmed) { flushParagraph(); closeList(); continue }
