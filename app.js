@@ -77,9 +77,9 @@ const escapeHtml = value => String(value ?? '')
 
 const safeUrl = value => /^(https?:\/\/|\/|#)/i.test(value) ? value : '#'
 
-const inlineMarkdown = value => {
+const inlineMarkdown = (value, eagerImages = false) => {
   let text = escapeHtml(value)
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${safeUrl(url)}" alt="${alt}" loading="lazy" />`)
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${safeUrl(url)}" alt="${alt}" loading="${eagerImages ? 'eager' : 'lazy'}" data-lightbox />`)
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => `<a href="${safeUrl(url)}" target="_blank" rel="noreferrer">${label}</a>`)
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>')
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -139,13 +139,14 @@ const renderMarkdown = markdown => {
     if (trimmed.startsWith('|') && isTableSeparator(nextLine)) {
       flushParagraph(); closeList()
       const cells = []
-      let endIndex = lineIndex + 1
-      for (let index = lineIndex + 2; index < lines.length && lines[index].trim().startsWith('|'); index++) {
+      let endIndex = lineIndex
+      for (let index = lineIndex; index < lines.length && lines[index].trim().startsWith('|'); index++) {
+        if (isTableSeparator(lines[index].trim())) { endIndex = index; continue }
         const row = lines[index].trim().replace(/^\||\|$/g, '')
         cells.push(...row.split('|').map(cell => cell.trim()).filter(Boolean))
         endIndex = index
       }
-      output.push(`<div class="article-image-grid">${cells.map(cell => `<div>${inlineMarkdown(cell)}</div>`).join('')}</div>`)
+      output.push(`<div class="article-image-grid">${cells.map(cell => `<div>${inlineMarkdown(cell, true)}</div>`).join('')}</div>`)
       lineIndex = endIndex
       continue
     }
