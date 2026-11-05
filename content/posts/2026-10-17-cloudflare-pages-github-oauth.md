@@ -2,7 +2,7 @@
 title: Cloudflare Pages + GitHub OAuth 安全发布配置手册
 titleEn: Cloudflare Pages + GitHub OAuth Secure Publishing Setup Guide
 date: 2026-10-17
-updated: 2026-10-18
+updated: 2026-10-22
 category: 随笔
 categoryEn: 
 tags: [个人网站建立]
@@ -813,8 +813,6 @@ ALLOWED_GITHUB_LOGIN
 - [ ] 使用 Cloudflare 管理台登录
 - [ ] GitHub 登录成功
 - [ ] 发布测试文章成功
-
-
 - [ ] GitHub `content/posts/` 出现新 Markdown 文件
 - [ ] Actions 构建成功
 - [ ] 网站首页出现新文章
