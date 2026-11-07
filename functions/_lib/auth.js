@@ -72,8 +72,16 @@ export const getReturnUrl = (env, value) => {
 
 export const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), {
   status,
-  headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers }
+  headers: {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    ...headers
+  }
 })
+
+export const isTrustedOrigin = (request, env) => request.headers.get('Origin') === config(env).allowedOrigin
 
 export const withCors = (request, env, response) => {
   const origin = request.headers.get('Origin')
@@ -83,14 +91,19 @@ export const withCors = (request, env, response) => {
   }
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
   response.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+  response.headers.set('Cache-Control', 'no-store')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'no-referrer')
   return response
 }
 
 export const options = (request, env) => withCors(request, env, new Response(null, { status: 204 }))
 
-export const readJson = async request => {
+export const readJson = async (request, maxLength = 400000) => {
+  const declaredLength = Number(request.headers.get('Content-Length'))
+  if (Number.isFinite(declaredLength) && declaredLength > maxLength) throw new Error('Request too large')
   const text = await request.text()
-  if (text.length > 400000) throw new Error('Request too large')
+  if (new TextEncoder().encode(text).byteLength > maxLength) throw new Error('Request too large')
   return JSON.parse(text || '{}')
 }
 

@@ -4,7 +4,13 @@ const fail = (returnUrl, reason, headers = {}) => {
   const destination = new URL(returnUrl)
   destination.searchParams.set('auth', 'error')
   destination.searchParams.set('reason', reason)
-  return new Response(null, { status: 302, headers: { Location: destination.toString(), ...headers } })
+  return new Response(null, { status: 302, headers: {
+    Location: destination.toString(),
+    'Cache-Control': 'no-store',
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+    ...headers
+  } })
 }
 
 export async function onRequestGet({ request, env }) {
@@ -68,7 +74,12 @@ export async function onRequestGet({ request, env }) {
     console.error('GitHub OAuth session creation failed', { message: error.message })
     return fail(returnUrl, 'session_creation_failed', clearState)
   }
-  const response = new Response(null, { status: 302, headers: { Location: `${returnUrl}?auth=success` } })
+  const response = new Response(null, { status: 302, headers: {
+    Location: `${returnUrl}?auth=success`,
+    'Cache-Control': 'no-store',
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff'
+  } })
   response.headers.append('Set-Cookie', cookie(SESSION_COOKIE, session))
   response.headers.append('Set-Cookie', clearCookie(STATE_COOKIE))
   return response

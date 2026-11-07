@@ -16,8 +16,8 @@ const escapeXml = value => String(value)
 
 const parseValue = value => {
   const clean = value.trim()
-  if (clean.startsWith('[') && clean.endsWith(']')) {
-    return clean.slice(1, -1).split(',').map(item => item.trim()).filter(Boolean)
+  if ((clean.startsWith('[') && clean.endsWith(']')) || (clean.startsWith('"') && clean.endsWith('"'))) {
+    try { return JSON.parse(clean) } catch {}
   }
   return clean.replace(/^['"]|['"]$/g, '')
 }

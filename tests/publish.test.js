@@ -5,26 +5,19 @@ import { onRequestPost } from '../functions/api/publish.js'
 
 const env = { SESSION_SECRET: 'test-session-secret', ALLOWED_GITHUB_LOGIN: 'stephen0430', ADMIN_ORIGIN: 'https://qxy0430.pages.dev' }
 const publishedPath = 'content/posts/2026-10-13-original-slug.md'
+const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]).toString('base64')
+const imageId = '12345678-1234-4234-9234-123456789abc'
 const post = overrides => ({
-  title: 'Revised title',
-  slug: 'original-slug',
-  date: '2026-10-13',
-  category: '学习',
-  categoryEn: 'Learning',
-  tags: ['更新'],
-  tagsEn: ['Updates'],
-  cover: '/assets/custom.webp',
-  excerpt: 'New excerpt',
-  excerptEn: 'New excerpt in English',
-  content: '# Revised content',
-  ...overrides
+  title: 'Revised title', slug: 'original-slug', date: '2026-10-13', category: '学习', categoryEn: 'Learning',
+  tags: ['更新'], tagsEn: ['Updates'], cover: '/assets/custom.webp', excerpt: 'New excerpt',
+  excerptEn: 'New excerpt in English', content: 'Revised body', ...overrides
 })
 
-const requestFor = async body => {
+const requestFor = async (body, origin = env.ADMIN_ORIGIN) => {
   const session = await createSession(env, { login: 'stephen0430', accessToken: 'test-github-token' })
-  return new Request('https://qxy0430.pages.dev/api/publish', {
+  return new Request(`${env.ADMIN_ORIGIN}/api/publish`, {
     method: 'POST',
-    headers: { Cookie: `qxy_session=${session}`, 'Content-Type': 'application/json' },
+    headers: { Cookie: `qxy_session=${session}`, Origin: origin, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
 }
@@ -41,34 +34,76 @@ const withFetch = async (mock, run) => {
   try { return await run() } finally { globalThis.fetch = original }
 }
 
-test('updates the original file and preserves its publication date and localized metadata', async () => {
-  const originalMarkdown = '---\ntitle: Original\ndate: 2026-10-13\ncategory: 学习\n---\n\nOriginal body\n'
+const mockGitHub = ({ originalMarkdown = null, staleRef = false } = {}) => {
   const calls = []
+  let blobIndex = 0
+  const fetch = async (url, init = {}) => {
+    const call = { url: String(url), init }
+    calls.push(call)
+    const parsed = new URL(call.url)
+    if (parsed.pathname.endsWith('/git/ref/heads/main')) return Response.json({ object: { sha: 'parent-sha' } })
+    if (parsed.pathname.includes('/contents/')) {
+      if (originalMarkdown === null) return new Response('Not Found', { status: 404 })
+      return Response.json({ sha: 'article-sha', content: Buffer.from(originalMarkdown).toString('base64') })
+    }
+    if (parsed.pathname.endsWith('/git/commits/parent-sha')) return Response.json({ tree: { sha: 'base-tree' } })
+    if (parsed.pathname.endsWith('/git/blobs')) return Response.json({ sha: `blob-${++blobIndex}` })
+    if (parsed.pathname.endsWith('/git/trees')) return Response.json({ sha: 'new-tree' })
+    if (parsed.pathname.endsWith('/git/commits')) return Response.json({ sha: 'new-commit', html_url: 'https://github.com/example/commit/new' })
+    if (parsed.pathname.endsWith('/git/refs/heads/main')) return staleRef
+      ? Response.json({ message: 'Update is not a fast forward' }, { status: 422 })
+      : Response.json({ object: { sha: 'new-commit' } })
+    throw new Error(`Unexpected GitHub API call: ${init.method || 'GET'} ${call.url}`)
+  }
+  return { calls, fetch }
+}
+
+test('publishes an article and its staged image in one Git commit', async () => {
+  const request = await requestFor(post({ cover: `qxy-upload://${imageId}`, content: `![cover](qxy-upload://${imageId})`, media: [{ id: imageId, name: 'cover image.png', type: 'image/png', data: png }] }))
+  const github = mockGitHub()
+  const response = await withFetch(github.fetch, () => onRequestPost({ request, env }))
+  const result = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(result.date, '2026-10-13')
+  assert.equal(result.mediaPaths.length, 1)
+
+  const blobCalls = github.calls.filter(call => new URL(call.url).pathname.endsWith('/git/blobs'))
+  const imagePath = `assets/posts/original-slug/${imageId}-cover-image.png`
+  assert.equal(blobCalls.length, 2)
+  assert.equal(JSON.parse(blobCalls[0].init.body).content, png)
+  const treeCall = github.calls.find(call => new URL(call.url).pathname.endsWith('/git/trees'))
+  const tree = JSON.parse(treeCall.init.body)
+  assert.equal(tree.base_tree, 'base-tree')
+  assert.deepEqual(tree.tree.map(entry => entry.path), [imagePath, publishedPath])
+
+  const commitCall = github.calls.find(call => new URL(call.url).pathname.endsWith('/git/commits') && call.init.method === 'POST')
+  assert.deepEqual(JSON.parse(commitCall.init.body).parents, ['parent-sha'])
+  const updateCall = github.calls.find(call => new URL(call.url).pathname.endsWith('/git/refs/heads/main') && call.init.method === 'PATCH')
+  assert.equal(JSON.parse(updateCall.init.body).force, false)
+  const articleBlob = JSON.parse(blobCalls[1].init.body)
+  const markdown = Buffer.from(articleBlob.content, 'base64').toString('utf8')
+  assert.match(markdown, new RegExp(`cover: "/${imagePath.replaceAll('/', '\\/')}"`))
+  assert.match(markdown, new RegExp(`!\\[cover\\]\\(/${imagePath.replaceAll('/', '\\/')}\\)`))
+  assert.match(markdown, /title: "Revised title"/)
+  assert.equal(github.calls.filter(call => new URL(call.url).pathname.includes('/contents/')).length, 1)
+})
+
+test('updates the original file and preserves its publication date', async () => {
+  const originalMarkdown = '---\ntitle: "Original"\ndate: 2026-10-13\ncategory: "学习"\n---\n\nOriginal body\n'
   const request = await requestFor(post({ sourcePath: publishedPath, date: '2026-10-15' }))
-
-  const response = await withFetch(async (url, init = {}) => {
-    calls.push({ url: String(url), init })
-    if (!init.method) return Response.json({ sha: 'current-sha', content: Buffer.from(originalMarkdown).toString('base64') })
-    return Response.json({ commit: { html_url: 'https://github.com/example/commit/abc' } })
-  }, () => onRequestPost({ request, env }))
-
+  const github = mockGitHub({ originalMarkdown })
+  const response = await withFetch(github.fetch, () => onRequestPost({ request, env }))
   const result = await response.json()
   assert.equal(response.status, 200)
   assert.equal(result.path, publishedPath)
   assert.equal(result.date, '2026-10-13')
   assert.equal(result.updated, shanghaiDate())
-  assert.equal(calls.length, 2)
-  assert.match(calls[0].url, /2026-10-13-original-slug\.md\?ref=main$/)
-
-  const payload = JSON.parse(calls[1].init.body)
-  const markdown = Buffer.from(payload.content, 'base64').toString('utf8')
-  assert.equal(payload.sha, 'current-sha')
-  assert.match(markdown, /\ndate: 2026-10-13\nupdated:/)
-  assert.match(markdown, /titleEn: /)
-  assert.match(markdown, /categoryEn: Learning/)
-  assert.match(markdown, /tagsEn: \[Updates\]/)
-  assert.match(markdown, /excerptEn: New excerpt in English/)
-  assert.match(markdown, /cover: \/assets\/custom\.webp/)
+  const blobCall = github.calls.find(call => new URL(call.url).pathname.endsWith('/git/blobs') && call.init.method === 'POST')
+  const markdown = Buffer.from(JSON.parse(blobCall.init.body).content, 'base64').toString('utf8')
+  assert.match(markdown, /date: 2026-10-13\nupdated:/)
+  assert.match(markdown, /categoryEn: "Learning"/)
+  assert.match(markdown, /tagsEn: \["Updates"\]/)
+  assert.match(markdown, /cover: "\/assets\/custom\.webp"/)
 })
 
 test('rejects unsafe source paths before contacting GitHub', async () => {
@@ -79,38 +114,45 @@ test('rejects unsafe source paths before contacting GitHub', async () => {
   assert.equal(called, false)
 })
 
-test('does not silently overwrite an existing file when creating a new post', async () => {
+test('requires an authenticated session before calling GitHub', async () => {
+  const request = new Request(`${env.ADMIN_ORIGIN}/api/publish`, {
+    method: 'POST', headers: { Origin: env.ADMIN_ORIGIN, 'Content-Type': 'application/json' }, body: JSON.stringify(post())
+  })
+  let called = false
+  const response = await withFetch(async () => { called = true }, () => onRequestPost({ request, env }))
+  assert.equal(response.status, 401)
+  assert.equal(called, false)
+})
+
+test('rejects cross-origin publishing requests', async () => {
+  const request = await requestFor(post(), 'https://evil.example')
+  let called = false
+  const response = await withFetch(async () => { called = true }, () => onRequestPost({ request, env }))
+  assert.equal(response.status, 403)
+  assert.equal(called, false)
+})
+
+test('does not overwrite an existing article when publishing a new one', async () => {
   const request = await requestFor(post({ sourcePath: undefined }))
-  const response = await withFetch(async () => Response.json({ sha: 'existing-sha' }), () => onRequestPost({ request, env }))
+  const github = mockGitHub({ originalMarkdown: 'existing' })
+  const response = await withFetch(github.fetch, () => onRequestPost({ request, env }))
   assert.equal(response.status, 409)
+  assert.equal(github.calls.some(call => call.init.method === 'POST'), false)
 })
 
-test('sets a new post update date to its initial publication date', async () => {
-  const calls = []
-  const request = await requestFor(post({ sourcePath: undefined }))
-  const response = await withFetch(async (url, init = {}) => {
-    calls.push({ url: String(url), init })
-    if (!init.method) return new Response('Not Found', { status: 404 })
-    return Response.json({ commit: { html_url: 'https://github.com/example/commit/def' } })
-  }, () => onRequestPost({ request, env }))
+test('aborts without moving the branch if another commit lands during publication', async () => {
+  const request = await requestFor(post())
+  const github = mockGitHub({ staleRef: true })
+  const response = await withFetch(github.fetch, () => onRequestPost({ request, env }))
+  assert.equal(response.status, 409)
+  assert.match((await response.json()).error, /site changed/i)
+})
+
+test('rejects media references that do not match staged image data', async () => {
+  const request = await requestFor(post({ content: `![missing](qxy-upload://${imageId})`, media: [] }))
+  let called = false
+  const response = await withFetch(async () => { called = true }, () => onRequestPost({ request, env }))
   const result = await response.json()
-  const payload = JSON.parse(calls[1].init.body)
-  const markdown = Buffer.from(payload.content, 'base64').toString('utf8')
-  assert.equal(response.status, 200)
-  assert.equal(result.date, '2026-10-13')
-  assert.equal(result.updated, '2026-10-13')
-  assert.match(markdown, /\ndate: 2026-10-13\nupdated: 2026-10-13\n/)
-  assert.equal(payload.sha, undefined)
-})
-
-test('saves an empty cover for category/site fallback', async () => {
-  const request = await requestFor(post({ cover: '', sourcePath: undefined }))
-  let markdown = ''
-  const response = await withFetch(async (_, init = {}) => {
-    if (!init.method) return new Response('Not Found', { status: 404 })
-    markdown = Buffer.from(JSON.parse(init.body).content, 'base64').toString('utf8')
-    return Response.json({ commit: {} })
-  }, () => onRequestPost({ request, env }))
-  assert.equal(response.status, 200)
-  assert.match(markdown, /\ncover: \n/)
+  assert.equal(response.status, 400, JSON.stringify(result))
+  assert.equal(called, false)
 })

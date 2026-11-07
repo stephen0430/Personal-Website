@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>QXY Web · 管理台</title>
-    <link rel="stylesheet" href="styles.css?v=article-preview-1" />
+    <link rel="stylesheet" href="styles.css?v=media-upload-2" />
   </head>
   <body class="admin-body">
     <main class="admin-shell">
       <header class="admin-header">
         <div>
-          <span class="eyebrow">QXY WEB / LOCAL ADMIN</span>
+          <span class="eyebrow">QXY WEB / ADMIN</span>
           <h1>内容管理台</h1>
-          <p>在浏览器里编辑草稿，保存到本机后导出 Markdown，再运行构建脚本发布到 GitHub Pages。</p>
+          <p>在浏览器中管理草稿、编辑 Markdown，并直接发布到网站。</p>
         </div>
         <div class="admin-actions">
           <a class="button button-ghost" href="index.html#home">返回网站</a>
@@ -61,15 +61,15 @@
             <label>标题<input id="postTitle" type="text" placeholder="输入文章标题" /></label>
             <section class="cover-editor" aria-labelledby="coverHeading">
               <div class="cover-editor-head">
-                <div><strong id="coverHeading">文章封面</strong><small>未设置时优先使用分类默认封面，其次使用网站默认封面</small></div>
+                <div><strong id="coverHeading">文章封面</strong><small>本地暂存，发布时与文章一起上传。未设置时使用默认封面。</small></div>
                 <div class="cover-actions">
-                  <button class="button button-ghost" id="uploadCover" type="button">上传图片</button>
+                  <button class="button button-ghost" id="uploadCover" type="button">选择封面图片</button>
                   <button class="button button-ghost" id="removeCover" type="button">移除</button>
                   <input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
                 </div>
               </div>
               <img id="coverPreview" class="cover-preview" alt="文章封面预览" />
-              <label>或填写图片地址<input id="postCover" type="text" placeholder="https://... 或 /assets/covers/example.webp" /></label>
+              <label>或填写图片地址<input id="postCover" type="text" placeholder="https://... 或 /assets/example.webp" /></label>
             </section>
             <div class="form-row">
               <label>发布日期<input id="postDate" type="date" /><small id="postDateNote">新文章可设置发布日期。</small></label>
@@ -77,6 +77,11 @@
             </div>
             <label>标签<input id="postTags" type="text" placeholder="用逗号分隔，例如：AI, Python" /></label>
             <label>摘要<textarea id="postExcerpt" rows="2" placeholder="首页卡片摘要"></textarea></label>
+            <div class="body-image-actions">
+              <span>正文图片</span>
+              <button class="button button-ghost" id="uploadBodyImage" type="button">插入图片</button>
+              <input id="bodyImageFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden />
+            </div>
             <label>正文（Markdown）<textarea id="postContent" rows="18" placeholder="# 文章标题\n\n在这里写内容。"></textarea></label>
           </div>
           <div class="editor-footer">
@@ -96,14 +101,14 @@
         </div>
         <ol>
           <li>导入 Markdown 后，文章会先保存为本地草稿。</li>
-          <li>可以在管理台预览、修改标题、日期、分类、标签、摘要和正文。</li>
+          <li>可以在管理台预览、修改文章信息，并暂存封面和正文图片。</li>
           <li>确认效果无误后，再点击“发布到网站”。</li>
           <li>发布完成后，文章会自动进入首页、分类、标签、归档和搜索。</li>
         </ol>
-        <p class="muted">发布功能通过独立的 OAuth 后端完成，GitHub Token 只保存在服务端会话中，不会写入浏览器或公开网页。</p>
+        <p class="muted">图片先保存在当前浏览器的草稿存储中，发布时再与文章一起写入网站。GitHub 登录令牌只保存在服务端会话中。</p>
       </section>
     </main>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="admin.js?v=article-preview-1"></script>
+    <script type="module" src="admin.js?v=media-upload-2"></script>
   </body>
 </html>

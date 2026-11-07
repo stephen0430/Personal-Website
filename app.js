@@ -1,10 +1,20 @@
+import { renderMarkdownTable } from './lib/markdown-table.js'
+
 const state = {
   site: null,
   posts: [],
-  lang: localStorage.getItem('qxy-lang') || 'zh',
-  theme: localStorage.getItem('qxy-theme') || 'light',
+  lang: getStoredValue('qxy-lang', 'zh'),
+  theme: getStoredValue('qxy-theme', 'light'),
   typingTimer: null,
   pendingAnchor: ''
+}
+
+function getStoredValue(key, fallback) {
+  try { return localStorage.getItem(key) || fallback } catch { return fallback }
+}
+
+function setStoredValue(key, value) {
+  try { localStorage.setItem(key, value); return true } catch { return false }
 }
 
 const basePath = location.hostname.endsWith('.github.io')
@@ -75,11 +85,18 @@ const escapeHtml = value => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;')
 
-const safeUrl = value => /^(https?:\/\/|\/|#)/i.test(value) ? value : '#'
+const safeUrl = value => /^(https?:\/\/|\/(?!\/)|#)/i.test(value) ? value : '#'
+const safeImageUrl = value => {
+  if (/^blob:/i.test(value)) {
+    try { return new URL(value).origin === location.origin ? value : '#' } catch { return '#' }
+  }
+  if (String(value).startsWith('/') && !String(value).startsWith('//')) return assetUrl(value)
+  return safeUrl(value)
+}
 
 const inlineMarkdown = (value, eagerImages = false) => {
   let text = escapeHtml(value)
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${safeUrl(url)}" alt="${alt}" loading="${eagerImages ? 'eager' : 'lazy'}" data-lightbox />`)
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${safeImageUrl(url)}" alt="${alt}" loading="${eagerImages ? 'eager' : 'lazy'}" data-lightbox />`)
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => `<a href="${safeUrl(url)}" target="_blank" rel="noreferrer">${label}</a>`)
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>')
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -134,20 +151,11 @@ const renderMarkdown = markdown => {
       output.push(`<div class="code-block"><div class="code-label">${escapeHtml(block.language)}</div><button class="code-copy" data-copy-code type="button">${t('article.copy')}</button><pre>${escapeHtml(block.code)}</pre></div>`)
       continue
     }
-    const nextLine = lines[lineIndex + 1]?.trim()
-    const isTableSeparator = value => /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?$/.test(value || '')
-    if (trimmed.startsWith('|') && isTableSeparator(nextLine)) {
+    const table = renderMarkdownTable(lines, lineIndex, (cell, eager) => inlineMarkdown(cell, eager))
+    if (table) {
       flushParagraph(); closeList()
-      const cells = []
-      let endIndex = lineIndex
-      for (let index = lineIndex; index < lines.length && lines[index].trim().startsWith('|'); index++) {
-        if (isTableSeparator(lines[index].trim())) { endIndex = index; continue }
-        const row = lines[index].trim().replace(/^\||\|$/g, '')
-        cells.push(...row.split('|').map(cell => cell.trim()).filter(Boolean))
-        endIndex = index
-      }
-      output.push(`<div class="article-image-grid">${cells.map(cell => `<div>${inlineMarkdown(cell, true)}</div>`).join('')}</div>`)
-      lineIndex = endIndex
+      output.push(table.html)
+      lineIndex = table.end
       continue
     }
     if (!trimmed) { flushParagraph(); closeList(); continue }
@@ -281,7 +289,7 @@ const countBy = key => state.posts.reduce((map, post) => {
 const setTheme = theme => {
   state.theme = theme
   html.dataset.theme = theme
-  localStorage.setItem('qxy-theme', theme)
+  setStoredValue('qxy-theme', theme)
   document.querySelector('#themeButton').textContent = theme === 'dark' ? '☼' : '☾'
   document.querySelector('#adminTheme')?.replaceChildren(document.createTextNode(theme === 'dark' ? '☼' : '☾'))
 }
@@ -311,7 +319,7 @@ const renderHero = () => `
   </section>`
 
 const renderProfile = () => {
-  const visits = Number(localStorage.getItem('qxy-visits') || 0)
+  const visits = Number(getStoredValue('qxy-visits', '0'))
   return `<div class="side-card profile-card">
     <img src="${safeUrl(assetUrl(state.site.avatar))}" alt="${escapeHtml(state.site.displayName)}" />
     <h3>${escapeHtml(state.site.displayName)}</h3>
@@ -375,7 +383,7 @@ const getHeadings = post => parseMarkdownHeadings(post.content)
 const renderArticle = (post, preview = false) => {
   const headings = getHeadings(post)
   const viewKey = `qxy-view-${post.slug}`
-  if (!preview) localStorage.setItem(viewKey, String(Number(localStorage.getItem(viewKey) || 0) + 1))
+  if (!preview) setStoredValue(viewKey, String(Number(getStoredValue(viewKey, '0')) + 1))
   const title = localized(post, 'title') || post.title
   const category = localized(post, 'category') || post.category
   const previewCover = preview && String(post.previewCoverUrl || '').startsWith(`blob:${location.origin}/`) ? post.previewCoverUrl : ''
@@ -386,7 +394,7 @@ const renderArticle = (post, preview = false) => {
       <article class="article-card"><div class="article-cover"><img src="${previewCover ? escapeHtml(previewCover) : safeUrl(coverSource)}" alt="${escapeHtml(title)}" data-lightbox /></div>
         <div class="article-content"><header class="article-header"><span class="eyebrow">${escapeHtml(category)}</span><h1>${escapeHtml(title)}</h1><p>${post.tags.map(escapeHtml).join(' / ')}</p></header>
           <div class="article-body">${renderMarkdown(post.content)}</div>
-          <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${preview ? '预览模式' : `${localStorage.getItem(viewKey)} views`}</span></div>
+        <div class="article-footer"><span>QXY Web · ${escapeHtml(state.site.displayName)}</span><span>${preview ? '预览模式' : `${getStoredValue(viewKey, '0')} views`}</span></div>
           ${preview ? '' : renderComments()}
           ${renderArticleCopyright(post)}
           ${preview ? '' : renderShareActions(post)}
@@ -554,14 +562,14 @@ const init = async () => {
   const [siteResponse, postsResponse] = await Promise.all([fetch('content/site.json?v=homepage-layout-fixes-1'), fetch('content/posts.json?v=first-post-translation-1')])
   state.site = await siteResponse.json(); state.posts = await postsResponse.json()
   setTheme(state.theme)
-  const visitCount = Number(localStorage.getItem('qxy-visits') || 0) + 1
-  localStorage.setItem('qxy-visits', String(visitCount))
+  const visitCount = Number(getStoredValue('qxy-visits', '0')) + 1
+  setStoredValue('qxy-visits', String(visitCount))
   render()
   updateFooterRuntime()
   setInterval(updateFooterRuntime, 1000)
   window.addEventListener('hashchange', render)
   document.querySelector('#themeButton').addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'))
-  document.querySelector('#languageButton').addEventListener('click', () => { state.lang = state.lang === 'zh' ? 'en' : 'zh'; localStorage.setItem('qxy-lang', state.lang); render() })
+  document.querySelector('#languageButton').addEventListener('click', () => { state.lang = state.lang === 'zh' ? 'en' : 'zh'; setStoredValue('qxy-lang', state.lang); render() })
   document.querySelector('#searchButton').addEventListener('click', openSearch)
   document.querySelector('#searchClose').addEventListener('click', closeSearch)
   document.querySelector('#searchLayer').addEventListener('click', event => { if (event.target.id === 'searchLayer') closeSearch() })

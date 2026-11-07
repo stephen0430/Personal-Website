@@ -18,20 +18,31 @@ export const parseMarkdownPost = (raw, fallbackDate) => {
     const index = line.indexOf(':')
     if (index >= 0) meta[line.slice(0, index).trim()] = line.slice(index + 1).trim()
   })
-  const parseTags = value => (value || '').replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
+  const parseTags = value => {
+    const clean = String(value || '').trim()
+    if (clean.startsWith('[')) {
+      try { const parsed = JSON.parse(clean); if (Array.isArray(parsed)) return parsed.map(String) } catch {}
+    }
+    return clean.replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(Boolean)
+  }
+  const parseScalar = value => {
+    const clean = String(value || '').trim()
+    if (clean.startsWith('"')) { try { return JSON.parse(clean) } catch {} }
+    return clean
+  }
   return {
-    slug: meta.slug || '',
-    title: meta.title || '',
-    titleEn: meta.titleEn || '',
+    slug: parseScalar(meta.slug),
+    title: parseScalar(meta.title),
+    titleEn: parseScalar(meta.titleEn),
     date: meta.date || fallbackDate,
     updated: meta.updated || '',
-    category: meta.category || '',
-    categoryEn: meta.categoryEn || '',
+    category: parseScalar(meta.category),
+    categoryEn: parseScalar(meta.categoryEn),
     tags: parseTags(meta.tags),
     tagsEn: parseTags(meta.tagsEn),
-    cover: meta.cover || '',
-    excerpt: meta.excerpt || '',
-    excerptEn: meta.excerptEn || '',
+    cover: parseScalar(meta.cover),
+    excerpt: parseScalar(meta.excerpt),
+    excerptEn: parseScalar(meta.excerptEn),
     content: match[2].trim()
   }
 }

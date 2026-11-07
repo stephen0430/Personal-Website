@@ -18,3 +18,12 @@ test('imports UTF-8 BOM and CRLF frontmatter without losing metadata', () => {
   assert.deepEqual(post.tags, ['A', 'B'])
   assert.equal(post.content, 'Body text')
 })
+
+test('imports quoted JSON-compatible frontmatter containing commas and quotes', () => {
+  const markdown = '---\ntitle: "Title: with, punctuation and \\"quotes\\""\ntags: ["AI, ML", "Deep learning"]\ncover: ""\n---\n\n![figure](qxy-upload://12345678-1234-4234-9234-123456789abc)'
+  const post = parseMarkdownPost(markdown, '2026-11-08')
+  assert.equal(post.title, 'Title: with, punctuation and "quotes"')
+  assert.deepEqual(post.tags, ['AI, ML', 'Deep learning'])
+  assert.equal(post.cover, '')
+  assert.match(post.content, /qxy-upload:\/\//)
+})
