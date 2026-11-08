@@ -1,16 +1,16 @@
 ---
-title: U-Net 论文学习整理
-titleEn: U-Net Paper Study Notes
+title: "U-Net 论文学习整理"
+titleEn: "U-Net Paper Study Notes"
 date: 2026-11-05
-updated: 2026-11-07
-category: 学习
-categoryEn: Learning
-tags: [U-Net, 深度学习, 图像分割]
-tagsEn: [U-Net, Deep Learning, Image Segmentation]
-cover: /assets/posts/unet/Unet2.png
-excerpt: U-Net 的结构、损失函数、小样本增强，以及卷积通道和下采样的学习笔记。
-excerptEn: Notes on U-Net architecture, loss, small-sample augmentation, convolution channels, and downsampling.
-slug: unet-study-notes
+updated: 2026-11-08
+category: "学习"
+categoryEn: "Learning"
+tags: ["U-Net","深度学习","图像分割"]
+tagsEn: ["U-Net","Deep Learning","Image Segmentation"]
+cover: "/assets/posts/unet/Unet2.png"
+excerpt: "U-Net 的结构、损失函数、小样本增强，以及卷积通道和下采样的学习笔记。"
+excerptEn: "Notes on U-Net architecture, loss, small-sample augmentation, convolution channels, and downsampling."
+slug: "unet-study-notes"
 ---
 
 ## 《U-Net: Convolutional Networks for Biomedical Image Segmentation》
@@ -27,7 +27,7 @@ slug: unet-study-notes
 
 **•** 意义价值：它证明了结合多尺度特征融合与针对性数据增强，分割模型可以在标注数据有限的生物医学任务中实现准确、实用的像素级分割。
 
-------------------------------------------------------问答------------------------------------------------------
+**------------------------------------------------------问答------------------------------------------------------**
 
 **问：第一个卷积层用 64 个卷积核对一张灰度图做卷积，输出通道为 64 我理解，但第二个卷积层也是 64 个卷积核为什么输出通道还是 64 而不是 64×64 呢？**
 
