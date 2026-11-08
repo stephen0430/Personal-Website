@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>QXY Web</title><link>https://qxy0430.pages.dev</link><description>生活就像海洋，只有意志坚强的人，才能到达彼岸。</description>
   <item>
+    <title>自动表面外形检测设备</title>
+    <link>https://qxy0430.pages.dev/?post=laser-point-cloud</link>
+    <guid>https://qxy0430.pages.dev/?post=laser-point-cloud</guid>
+    <pubDate>Sun, 08 Nov 2026 00:00:00 GMT</pubDate>
+    <description>介绍线激光轮廓仪的激光三角测量原理，以及点云粗配准、ICP 精配准、融合与三维模型重构流程。</description>
+  </item>
+  <item>
     <title>U-Net 论文学习整理</title>
     <link>https://qxy0430.pages.dev/?post=unet-study-notes</link>
     <guid>https://qxy0430.pages.dev/?post=unet-study-notes</guid>
