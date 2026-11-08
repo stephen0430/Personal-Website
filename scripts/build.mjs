@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseFrontmatterValue } from '../lib/frontmatter.js'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const postsDir = path.join(root, 'content', 'posts')
@@ -14,14 +15,6 @@ const escapeXml = value => String(value)
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&apos;')
 
-const parseValue = value => {
-  const clean = value.trim()
-  if ((clean.startsWith('[') && clean.endsWith(']')) || (clean.startsWith('"') && clean.endsWith('"'))) {
-    try { return JSON.parse(clean) } catch {}
-  }
-  return clean.replace(/^['"]|['"]$/g, '')
-}
-
 const parseMarkdown = raw => {
   const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/)
   if (!match) throw new Error('Missing front matter')
@@ -29,7 +22,7 @@ const parseMarkdown = raw => {
   for (const line of match[1].split(/\r?\n/)) {
     const index = line.indexOf(':')
     if (index < 0) continue
-    meta[line.slice(0, index).trim()] = parseValue(line.slice(index + 1))
+    meta[line.slice(0, index).trim()] = parseFrontmatterValue(line.slice(index + 1))
   }
   return {
     ...meta,

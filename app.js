@@ -185,8 +185,8 @@ const renderMarkdown = markdown => {
 }
 
 const formatDate = date => new Intl.DateTimeFormat(state.lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`))
-const renderPublishedDate = post => `<div class="post-date-meta post-published-date"><span><strong>${t('post.published')}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span></div>`
 const renderPostDates = post => `<div class="post-date-meta"><span><strong>${t('post.published')}</strong><time datetime="${escapeHtml(post.date)}">${formatDate(post.date)}</time></span><span><strong>${t('post.updated')}</strong><time datetime="${escapeHtml(post.updated || post.date)}">${formatDate(post.updated || post.date)}</time></span></div>`
+const renderPublishedDate = post => renderPostDates(post)
 const wordCount = post => post.content.replace(/[`#>*_\-\[\]()]/g, '').replace(/\s/g, '').length
 const sortedPosts = () => [...state.posts].sort((a, b) => b.date.localeCompare(a.date))
 const recentlyUpdatedPosts = () => [...state.posts].sort((a, b) => (b.updated || b.date).localeCompare(a.updated || a.date))

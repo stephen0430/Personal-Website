@@ -10,10 +10,14 @@
     "category": "学习",
     "categoryEn": "Learning",
     "tags": [
-      "[U-Net, 深度学习, 图像分割]"
+      "U-Net",
+      "深度学习",
+      "图像分割"
     ],
     "tagsEn": [
-      "[U-Net, Deep Learning, Image Segmentation]"
+      "U-Net",
+      "Deep Learning",
+      "Image Segmentation"
     ],
     "cover": "/assets/posts/unet/Unet2.png",
     "excerpt": "U-Net 的结构、损失函数、小样本增强，以及卷积通道和下采样的学习笔记。",
@@ -31,7 +35,7 @@
     "category": "随笔",
     "categoryEn": "",
     "tags": [
-      "[个人网站建立]"
+      "个人网站建立"
     ],
     "tagsEn": [],
     "cover": "/assets/cover.webp",
@@ -50,10 +54,12 @@
     "category": "生活记录",
     "categoryEn": "Life",
     "tags": [
-      "[生活记录, 随笔]"
+      "生活记录",
+      "随笔"
     ],
     "tagsEn": [
-      "[Life, Notes]"
+      "Life",
+      "Notes"
     ],
     "cover": "/assets/cover.webp",
     "excerpt": "这是 QXY Web 的第一篇文章，用来记录我为什么开始写一个属于自己的网站。",
@@ -71,10 +77,14 @@
     "category": "学习",
     "categoryEn": "Learning",
     "tags": [
-      "[AI, 机器学习, 深度学习]"
+      "AI",
+      "机器学习",
+      "深度学习"
     ],
     "tagsEn": [
-      "[AI, Machine Learning, Deep Learning]"
+      "AI",
+      "Machine Learning",
+      "Deep Learning"
     ],
     "cover": "/assets/cover.webp",
     "excerpt": "学习视觉模型时，先把输入、输出、评价指标和失败边界写清楚，往往比记住网络结构更重要。",
@@ -92,10 +102,14 @@
     "category": "项目复盘",
     "categoryEn": "Project Review",
     "tags": [
-      "[自动化, Python, AI]"
+      "自动化",
+      "Python",
+      "AI"
     ],
     "tagsEn": [
-      "[Automation, Python, AI]"
+      "Automation",
+      "Python",
+      "AI"
     ],
     "cover": "/assets/cover.webp",
     "excerpt": "项目复盘不是把结果重新讲一遍，而是让未来的自己知道当时做了哪些判断。",
